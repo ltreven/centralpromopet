@@ -1,0 +1,30 @@
+{
+  "name": "@centralpromopet/api",
+  "version": "1.0.0",
+  "description": "Central Promo Pet Backend API",
+  "main": "src/server.ts",
+  "scripts": {
+    "dev": "npm run build --workspace @centralpromopet/database && tsx watch src/server.ts",
+    "build": "npm run build --workspace @centralpromopet/database && tsc",
+    "start": "node dist/server.js",
+    "test": "tsx --test test/auth.test.ts",
+    "bootstrap:admin": "tsx src/scripts/bootstrapAdmin.ts",
+    "test:integration": "tsx --test test/integration.test.ts"
+  },
+  "dependencies": {
+    "@centralpromopet/database": "*",
+    "bcryptjs": "^3.0.3",
+    "express": "^4.19.2",
+    "google-auth-library": "^11.1.0",
+    "helmet": "^7.1.0",
+    "jsonwebtoken": "^9.0.3",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^20.12.11",
+    "tsx": "^4.9.0",
+    "typescript": "^5.4.5"
+  }
+}

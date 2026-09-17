@@ -1,0 +1,28 @@
+{
+  "name": "@centralpromopet/database",
+  "version": "1.0.0",
+  "description": "Central Promo Pet Database Package",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "generate": "drizzle-kit generate",
+    "migrate": "tsx scripts/migrate.ts",
+    "push": "drizzle-kit push",
+    "seed": "tsx seed/seed.ts",
+    "seed:demo": "tsx seed/demo.ts",
+    "studio": "drizzle-kit studio"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "dotenv": "^16.4.5",
+    "drizzle-orm": "^0.45.2",
+    "postgres": "^3.4.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.11",
+    "drizzle-kit": "^0.31.10",
+    "tsx": "^4.9.0",
+    "typescript": "^5.4.5"
+  }
+}

@@ -1,0 +1,31 @@
+imagePullSecrets:
+  - name: ghcr-pull-secret
+api:
+  appOrigins: "https://staging.centralpromopet.com.br"
+  image:
+    repository: ghcr.io/ltreven/centralpromopet-api
+    tag: bootstrap-pending
+    pullPolicy: Always
+  existingSecret: centralpromopet-api-secret
+web:
+  image:
+    repository: ghcr.io/ltreven/centralpromopet-web
+    tag: bootstrap-pending
+    pullPolicy: Always
+postgres:
+  auth:
+    existingSecret: centralpromopet-db-credentials
+  persistence:
+    enabled: true
+    size: 10Gi
+    storageClass: local-path
+migrations:
+  enabled: true
+ingress:
+  className: traefik
+  host: staging.centralpromopet.com.br
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+  tls:
+    enabled: true
+    secretName: centralpromopet-staging-tls

@@ -1,0 +1,47 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: centralpromopet-bootstrap-admin
+  namespace: centralpromopet-staging
+spec:
+  backoffLimit: 1
+  ttlSecondsAfterFinished: 600
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: centralpromopet-bootstrap-admin
+    spec:
+      restartPolicy: Never
+      imagePullSecrets:
+        - name: ghcr-pull-secret
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: bootstrap
+          image: ghcr.io/ltreven/centralpromopet-api:bootstrap-pending
+          imagePullPolicy: Always
+          command: ["node", "/app/apps/centralpromopet-api/dist/scripts/bootstrapAdmin.js"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: centralpromopet-api-secret
+                  key: database-url
+            - name: BOOTSTRAP_ADMIN_EMAIL
+              valueFrom:
+                secretKeyRef:
+                  name: centralpromopet-bootstrap-admin
+                  key: email
+            - name: BOOTSTRAP_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: centralpromopet-bootstrap-admin
+                  key: password

@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  application:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: centralpromopet
+          POSTGRES_PASSWORD: ci-only-password
+          POSTGRES_DB: centralpromopet_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U centralpromopet -d centralpromopet_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Build API
+        run: npm run build --workspace @centralpromopet/api
+      - name: Unit tests
+        run: npm test
+      - name: Integration tests
+        env:
+          TEST_DATABASE_URL: postgres://centralpromopet:ci-only-password@localhost:5432/centralpromopet_test
+        run: make test-integration
+      - name: Lint Web
+        run: npm run lint --workspace centralpromopet-web
+      - name: Build Web
+        run: npm run build --workspace centralpromopet-web
+
+  helm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+      - name: Validate local chart
+        run: helm lint charts/centralpromopet && helm template centralpromopet charts/centralpromopet --namespace centralpromopet >/dev/null
+      - name: Validate staging chart
+        run: helm lint charts/centralpromopet -f charts/centralpromopet/values-staging.yaml && helm template centralpromopet charts/centralpromopet -f charts/centralpromopet/values-staging.yaml --namespace centralpromopet-staging >/dev/null
+

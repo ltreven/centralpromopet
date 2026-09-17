@@ -1,0 +1,82 @@
+name: Deploy staging
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "charts/centralpromopet/values-staging.yaml"
+  workflow_dispatch:
+
+concurrency:
+  group: centralpromopet-staging
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  build-and-push:
+    if: vars.STAGING_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - component: api
+            image: ghcr.io/ltreven/centralpromopet-api
+            dockerfile: apps/centralpromopet-api/Dockerfile
+          - component: web
+            image: ghcr.io/ltreven/centralpromopet-web
+            dockerfile: apps/centralpromopet-web/Dockerfile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          push: true
+          tags: |
+            ${{ matrix.image }}:${{ github.sha }}
+            ${{ matrix.image }}:latest
+          cache-from: type=gha,scope=centralpromopet-${{ matrix.component }}
+          cache-to: type=gha,mode=max,scope=centralpromopet-${{ matrix.component }}
+
+  update-gitops:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: mikefarah/yq@v4.45.4
+        env:
+          IMAGE_TAG: ${{ github.sha }}
+        with:
+          cmd: yq -i '.api.image.tag = strenv(IMAGE_TAG) | .web.image.tag = strenv(IMAGE_TAG)' charts/centralpromopet/values-staging.yaml
+      - name: Commit deployed image tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add charts/centralpromopet/values-staging.yaml
+          if ! git diff --cached --quiet; then
+            promotion_branch="deploy/staging-${GITHUB_SHA::12}"
+            git switch -c "$promotion_branch"
+            git commit -m "chore: deploy ${{ github.sha }} to staging [skip ci]"
+            git push --set-upstream origin "$promotion_branch"
+            gh pr create --base main --head "$promotion_branch" --title "Deploy ${GITHUB_SHA::12} to staging" --body "Promotes the immutable API and Web images built from commit \`${GITHUB_SHA}\` to Central Promo Pet staging."
+            gh pr merge "$promotion_branch" --repo "${GITHUB_REPOSITORY}" --merge --delete-branch
+          fi

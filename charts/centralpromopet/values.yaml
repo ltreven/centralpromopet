@@ -1,0 +1,74 @@
+imagePullSecrets: []
+
+api:
+  googleClientId: ""
+  googleOneTapEnabled: true
+  appOrigins: "http://localhost:3001,http://127.0.0.1:3001,http://centralpromopet.localhost"
+  replicaCount: 1
+  image:
+    repository: centralpromopet/api
+    tag: latest
+    pullPolicy: Never
+  port: 4000
+  existingSecret: ""
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+web:
+  replicaCount: 1
+  image:
+    repository: centralpromopet/web
+    tag: latest
+    pullPolicy: Never
+  port: 3000
+  apiUrl: http://centralpromopet-api:4000
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+postgres:
+  enabled: true
+  image:
+    repository: postgres
+    tag: 15-alpine
+    pullPolicy: IfNotPresent
+  port: 5432
+  auth:
+    database: centralpromopet
+    username: centralpromopet
+    password: centralpromopet
+    existingSecret: ""
+    passwordKey: postgres-password
+  persistence:
+    enabled: false
+    size: 10Gi
+    storageClass: ""
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: "1"
+      memory: 1Gi
+
+migrations:
+  enabled: false
+  backoffLimit: 3
+
+ingress:
+  enabled: true
+  className: nginx
+  host: centralpromopet.localhost
+  annotations: {}
+  tls:
+    enabled: false
+    secretName: centralpromopet-tls

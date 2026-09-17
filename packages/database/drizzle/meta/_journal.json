@@ -1,0 +1,27 @@
+{
+  "version": "6",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1789673443811,
+      "tag": "0000_breezy_sage",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1789673899206,
+      "tag": "0001_tidy_whiplash",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1789677865132,
+      "tag": "0002_complete_blue_marvel",
+      "breakpoints": true
+    }
+  ]
+}

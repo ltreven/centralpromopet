@@ -1,0 +1,28 @@
+{
+  "name": "centralpromopet",
+  "version": "1.0.0",
+  "description": "Central Promo Pet Monorepo",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "make dev",
+    "up": "make up",
+    "down": "make down",
+    "db:studio": "npm --prefix packages/database run studio",
+    "build": "npm run build --workspace @centralpromopet/api && npm run build --workspace centralpromopet-web",
+    "lint": "npm run lint --workspace centralpromopet-web",
+    "test": "npm run test --workspace @centralpromopet/api",
+    "check": "npm run lint && npm run build && npm test"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "overrides": {
+    "@esbuild-kit/core-utils": {
+      "esbuild": "^0.25.12"
+    }
+  }
+}
