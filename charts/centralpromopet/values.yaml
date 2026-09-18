@@ -3,6 +3,7 @@ imagePullSecrets: []
 api:
   googleClientId: ""
   googleOneTapEnabled: true
+  adminEmails: ""
   appOrigins: "http://localhost:3001,http://127.0.0.1:3001,http://centralpromopet.localhost"
   replicaCount: 1
   image:

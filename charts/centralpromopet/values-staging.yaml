@@ -1,6 +1,8 @@
 imagePullSecrets:
   - name: ghcr-pull-secret
 api:
+  googleClientId: "8433826157-dfk00obfltkj7k9ef364g78fpn3qspv3.apps.googleusercontent.com"
+  adminEmails: "ltreven@gmail.com"
   appOrigins: "https://centralpromopet-stg.sabialabs.de"
   image:
     repository: ghcr.io/ltreven/centralpromopet-api

@@ -65,7 +65,7 @@ h2 { font-size: 32px; line-height: 1.2; letter-spacing: -1px; margin-block: 10px
 .account-card { max-width: 760px; }
 .admin-page h1 { font-size: clamp(30px, 4vw, 42px); letter-spacing: -1.3px; margin: 10px 0; }
 .admin-intro { color: var(--muted); margin-bottom: 28px; }
-.admin-promotions { display: grid; gap: 42px; }
+.admin-promotions, .admin-users { display: grid; gap: 42px; }
 .admin-panel { background: white; border: 1px solid var(--line); border-radius: 18px; padding: 30px; }
 .admin-panel h2, .admin-list h2 { font-size: 25px; margin: 10px 0; }
 .admin-panel > p { color: var(--muted); font-size: 14px; }

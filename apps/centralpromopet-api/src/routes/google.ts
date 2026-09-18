@@ -1,6 +1,6 @@
 import { createHash, randomBytes } from 'node:crypto';
 import { Router, Request } from 'express';
-import { and, eq, gt, lt } from 'drizzle-orm';
+import { and, eq, gt, lt, sql } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 import { db, googleLoginChallenges, users } from '@centralpromopet/database';
@@ -11,6 +11,9 @@ type Purpose = 'login' | 'link';
 const ttlSeconds = 600;
 const cookieName = (purpose: Purpose) => `centralpromopet_google_${purpose}`;
 const hash = (nonce: string) => createHash('sha256').update(nonce).digest('hex');
+function configuredAdminEmails() {
+  return new Set((process.env.ADMIN_EMAILS || '').split(',').map((email) => email.trim().toLowerCase()).filter(Boolean));
+}
 function challengeCookie(purpose: Purpose, nonce: string, clear = false) {
   return `${cookieName(purpose)}=${nonce}; HttpOnly; SameSite=Lax; Path=/api/identity/google; Max-Age=${clear ? 0 : ttlSeconds}${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`;
 }
@@ -75,20 +78,41 @@ export function createGoogleRouter(verifier: GoogleVerifier = verifyGoogleCreden
             const [linked] = await tx.update(users).set({ googleSubject: identity.subject, googleEmail: identity.email, displayName: current.displayName || identity.displayName, avatarUrl: identity.avatarUrl, updatedAt: new Date() }).where(eq(users.id, current.id)).returning();
             return linked;
           }
+          const isConfiguredAdmin = configuredAdminEmails().has(identity.email);
           let [existing] = await tx.select().from(users).where(eq(users.googleSubject, identity.subject));
           if (!existing) {
-            // Never claim a password account by email, and never accept a role from Google/browser.
-            const [created] = await tx.insert(users).values({
-              email: identity.email, googleSubject: identity.subject, googleEmail: identity.email,
-              displayName: identity.displayName, avatarUrl: identity.avatarUrl,
-              passwordHash: null, passwordExpired: false, role: 'user', status: 'active',
-            }).onConflictDoNothing().returning();
-            if (created) existing = created;
-            else [existing] = await tx.select().from(users).where(eq(users.googleSubject, identity.subject));
-            if (!existing) throw new GoogleLoginError(409, 'GOOGLE_LINK_REQUIRED', 'Entre com sua senha e vincule o Google em Segurança da conta.');
+            // Only an explicitly configured, Google-verified email may claim its matching account.
+            if (isConfiguredAdmin) {
+              const [matchingEmail] = await tx.select().from(users).where(eq(users.email, identity.email)).for('update');
+              if (matchingEmail?.googleSubject && matchingEmail.googleSubject !== identity.subject) {
+                throw new GoogleLoginError(409, 'GOOGLE_ALREADY_LINKED', 'Essa conta Google já está vinculada a outro perfil.');
+              }
+              if (matchingEmail) {
+                [existing] = await tx.update(users).set({
+                  googleSubject: identity.subject, googleEmail: identity.email,
+                  displayName: identity.displayName || matchingEmail.displayName, avatarUrl: identity.avatarUrl,
+                  role: 'admin', sessionVersion: sql`${users.sessionVersion} + 1`, updatedAt: new Date(),
+                }).where(eq(users.id, matchingEmail.id)).returning();
+              }
+            }
+            if (!existing) {
+              const [created] = await tx.insert(users).values({
+                email: identity.email, googleSubject: identity.subject, googleEmail: identity.email,
+                displayName: identity.displayName, avatarUrl: identity.avatarUrl,
+                passwordHash: null, passwordExpired: false, role: isConfiguredAdmin ? 'admin' : 'user', status: 'active',
+              }).onConflictDoNothing().returning();
+              if (created) existing = created;
+              else [existing] = await tx.select().from(users).where(eq(users.googleSubject, identity.subject));
+            }
+            if (!existing) throw new GoogleLoginError(409, 'GOOGLE_LINK_REQUIRED', 'Entre com sua senha e vincule esta conta ao Google antes de continuar.');
           }
           if (existing.status !== 'active') throw new GoogleLoginError(403, 'ACCOUNT_INACTIVE', 'Esta conta não está disponível para acesso.');
-          const [signedIn] = await tx.update(users).set({ lastLoginAt: new Date(), googleEmail: identity.email, displayName: identity.displayName || existing.displayName, avatarUrl: identity.avatarUrl, updatedAt: new Date() }).where(eq(users.id, existing.id)).returning();
+          const [signedIn] = await tx.update(users).set({
+            lastLoginAt: new Date(), googleEmail: identity.email, displayName: identity.displayName || existing.displayName,
+            avatarUrl: identity.avatarUrl,
+            ...(isConfiguredAdmin && existing.email === identity.email && existing.role !== 'admin' ? { role: 'admin' as const, sessionVersion: sql`${users.sessionVersion} + 1` } : {}),
+            updatedAt: new Date(),
+          }).where(eq(users.id, existing.id)).returning();
           return signedIn;
         });
         res.setHeader('Set-Cookie', [sessionCookie(createSessionToken(user)), challengeCookie(purpose, '', true)]);

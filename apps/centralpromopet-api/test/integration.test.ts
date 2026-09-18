@@ -16,17 +16,22 @@ process.env.NODE_ENV = 'test';
 
 test('real database: first login, authorization, revocation and active promotions', async (t) => {
   const { db, client, users, promotions } = await import('@centralpromopet/database');
-  const { app } = await import('../src/app');
+  const suffix = Date.now();
+  const googleAdminEmail = `google-admin-${suffix}@example.com`;
+  process.env.GOOGLE_CLIENT_ID = 'integration-test-client';
+  process.env.ADMIN_EMAILS = googleAdminEmail;
+  const { createApp } = await import('../src/app');
+  const app = createApp({ googleVerifier: async () => ({ subject: `google-subject-${suffix}`, email: googleAdminEmail, displayName: 'Google Admin', avatarUrl: null }) });
   const server = app.listen(0, '127.0.0.1');
   await once(server, 'listening');
   const address = server.address();
   assert.ok(address && typeof address === 'object');
   const base = `http://127.0.0.1:${address.port}`;
-  const suffix = Date.now();
   const email = `admin-${suffix}@example.com`;
   const initial = 'Temporary-password-123!';
   const updated = 'Updated-password-456!';
   const userIds: string[] = [];
+  const createdUserIds: string[] = [];
   const offerIds: string[] = [];
   let cookie = '';
   const request = (path: string, body?: unknown, session = cookie, extra: Record<string, string> = {}) => fetch(`${base}${path}`, { method: body === undefined ? 'GET' : 'POST', headers: { ...(body === undefined ? {} : { 'Content-Type': 'application/json' }), ...(session ? { Cookie: session } : {}), ...extra }, ...(body === undefined ? {} : { body: JSON.stringify(body) }) });
@@ -54,6 +59,7 @@ test('real database: first login, authorization, revocation and active promotion
       assert.equal((await request('/api/account')).status, 401);
       assert.equal((await request('/api/promotions/admin')).status, 401);
       assert.equal((await request('/api/promotions', { title: 'Offer' })).status, 401);
+      assert.equal((await request('/api/admin/users')).status, 401);
       assert.equal((await request('/ready')).status, 200);
     });
     await t.test('rejects cross-origin and non-JSON mutations', async () => {
@@ -76,6 +82,20 @@ test('real database: first login, authorization, revocation and active promotion
       assert.equal((await request('/api/account')).status, 403);
       assert.equal((await request('/api/identity/me')).status, 200);
     });
+    await t.test('only the explicitly configured verified Google email receives admin access', async () => {
+      const challenge = await request('/api/identity/google/challenge', {});
+      assert.equal(challenge.status, 200);
+      const nonce = (await challenge.json()).data.nonce;
+      const challengeCookie = challenge.headers.get('set-cookie')!.split(';')[0];
+      const response = await request('/api/identity/google/', { credential: 'mock-google-credential' }, '', { Cookie: challengeCookie });
+      assert.equal(response.status, 200);
+      const data = (await response.json()).data;
+      assert.equal(data.user.email, googleAdminEmail);
+      assert.equal(data.user.role, 'admin');
+      assert.equal(data.user.passwordExpired, false);
+      assert.ok(nonce);
+      userIds.push(data.user.id);
+    });
     await t.test('password change validates old/new passwords and invalidates old sessions', async () => {
       assert.equal((await request('/api/identity/change-password', { oldPassword: 'incorrect', newPassword: updated })).status, 400);
       assert.equal((await request('/api/identity/change-password', { oldPassword: initial, newPassword: initial })).status, 400);
@@ -97,6 +117,8 @@ test('real database: first login, authorization, revocation and active promotion
       assert.equal((await request('/api/admin/status', undefined, clientCookie)).status, 403);
       assert.equal((await request('/api/promotions/admin', undefined, clientCookie)).status, 403);
       assert.equal((await request('/api/promotions', { title: 'Offer' }, clientCookie)).status, 403);
+      assert.equal((await request('/api/admin/users', undefined, clientCookie)).status, 403);
+      assert.equal((await request('/api/admin/users', { email: 'new@example.com' }, clientCookie)).status, 403);
       await db.update(users).set({ status: 'inactive' }).where(eq(users.id, inserted[1].id));
       assert.equal((await request('/api/identity/me', undefined, clientCookie)).status, 401);
     });
@@ -132,6 +154,24 @@ test('real database: first login, authorization, revocation and active promotion
       assert.equal(draft.data.coupon, null);
       assert.equal(draft.data.status, 'draft');
     });
+    await t.test('admins can create users with a mandatory temporary password change', async () => {
+      const body = { email: `new-user-${suffix}@example.com`, displayName: 'Pessoa de Teste', temporaryPassword: initial, role: 'user' };
+      assert.equal((await request('/api/admin/users', { ...body, temporaryPassword: 'short' })).status, 400);
+      const response = await request('/api/admin/users', body);
+      assert.equal(response.status, 201);
+      const created = (await response.json()).data;
+      createdUserIds.push(created.id);
+      assert.equal(created.email, body.email);
+      assert.equal(created.displayName, body.displayName);
+      assert.equal(created.role, 'user');
+      assert.equal(created.passwordExpired, true);
+      assert.equal(created.passwordHash, undefined);
+      const [stored] = await db.select().from(users).where(eq(users.id, created.id));
+      assert.ok(await bcrypt.compare(initial, stored.passwordHash));
+      assert.equal((await request('/api/admin/users', body)).status, 409);
+      const listed = await request('/api/admin/users');
+      assert.ok((await listed.json()).data.some((user: { id: string }) => user.id === created.id));
+    });
     await t.test('public offers exclude drafts, future and expired promotions', async () => {
       const now = Date.now();
       const common = { title: `test-${suffix}`, store: 'Test store', priceCents: 1990, affiliateUrl: 'https://example.com', startsAt: new Date(now - 60000), endsAt: new Date(now + 60000) };
@@ -155,6 +195,7 @@ test('real database: first login, authorization, revocation and active promotion
     });
   } finally {
     if (offerIds.length) await db.delete(promotions).where(inArray(promotions.id, offerIds));
+    if (createdUserIds.length) await db.delete(users).where(inArray(users.id, createdUserIds));
     if (userIds.length) await db.delete(users).where(inArray(users.id, userIds));
     await new Promise<void>((resolve) => server.close(() => resolve()));
     await client.end();

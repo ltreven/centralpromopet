@@ -41,6 +41,8 @@ spec:
               value: {{ .Values.api.googleClientId | quote }}
             - name: GOOGLE_ONE_TAP_ENABLED
               value: {{ .Values.api.googleOneTapEnabled | quote }}
+            - name: ADMIN_EMAILS
+              value: {{ .Values.api.adminEmails | quote }}
             - name: APP_ORIGINS
               value: {{ .Values.api.appOrigins | quote }}
             - name: PORT

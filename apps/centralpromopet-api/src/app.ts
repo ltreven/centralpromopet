@@ -4,6 +4,7 @@ import { sql } from 'drizzle-orm';
 import { db } from '@centralpromopet/database';
 import { createIdentityRouter } from './routes/identity';
 import { promotionsRouter } from './routes/promotions';
+import { adminUsersRouter } from './routes/adminUsers';
 import { requireAuth, requireAdmin, requireCurrentPassword, validateJwtSecret } from './auth';
 
 import { GoogleVerifier } from './google';
@@ -35,6 +36,7 @@ app.get('/ready', async (_req, res) => {
   catch { res.status(503).json({ status: 'unavailable' }); }
 });
 app.use('/api/promotions', promotionsRouter);
+app.use('/api/admin/users', adminUsersRouter);
 app.use('/api/identity', createIdentityRouter(options.googleVerifier));
 app.use('/api', requireAuth, requireCurrentPassword);
 app.get('/api/account', (req, res) => res.json({ success: true, data: { message: 'Sua conta está pronta.' } }));

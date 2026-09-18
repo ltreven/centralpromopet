@@ -2,7 +2,7 @@
 
 import { FormEvent, useState } from 'react';
 import Image from 'next/image';
-import { ArrowDown, ArrowUpRight, Search, MessageCircle } from 'lucide-react';
+import { ArrowUpRight, Search, MessageCircle } from 'lucide-react';
 import { SiteHeader } from '@/components/site-header';
 import { Promotions, PetFilter } from '@/components/promotions';
 import { Chatbot } from '@/components/chatbot';
@@ -37,7 +37,6 @@ export function HomeLanding() {
       <section className="search-hero">
         <div className="search-hero-content container">
           <Image className="hero-logo" src="/logo.webp" width={112} height={112} alt="Central Promo Pet" priority />
-          <span className="eyebrow">OFERTAS ESCOLHIDAS COM CARINHO</span>
           <h1>A gente garimpa.<br /><span>Você economiza.</span></h1>
           <p>As melhores promoções para o seu pet, encontradas todos os dias.</p>
           <form className="home-search" role="search" onSubmit={submitSearch}>
@@ -51,7 +50,6 @@ export function HomeLanding() {
             </button>)}
           </div>
           <a href={site.whatsappUrl} target="_blank" rel="noopener noreferrer" className="button primary whatsapp-button"><MessageCircle size={19} /> Entrar no Grupo VIP do WhatsApp <ArrowUpRight size={17} /></a>
-          <a className="hero-scroll" href="#promocoes">Ver os garimpados de hoje <ArrowDown size={15} /></a>
         </div>
       </section>
 

@@ -1,5 +1,6 @@
 api:
   googleClientId: "8433826157-dfk00obfltkj7k9ef364g78fpn3qspv3.apps.googleusercontent.com"
+  adminEmails: "ltreven@gmail.com"
   resources:
     requests:
       cpu: 100m

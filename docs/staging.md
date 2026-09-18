@@ -74,6 +74,12 @@ success and change the temporary password.
 The bootstrap command refuses to run once an admin exists. Local seed credentials
 are documented in README and are exclusively for local development.
 
+The staging API grants administrator access to the explicitly configured, Google-
+verified email in `api.adminEmails`. The account is created or promoted when that
+person first signs in with the configured Google client; no password or user-supplied
+role is trusted for this grant. Admin-created users receive a temporary password
+and must replace it at first login.
+
 ## Current security limits
 
 Login/password-change throttling is conservative and per API process (30 requests
