@@ -5,7 +5,6 @@ import Image from 'next/image';
 import { ArrowUpRight, Search, MessageCircle } from 'lucide-react';
 import { SiteHeader } from '@/components/site-header';
 import { Promotions, PetFilter } from '@/components/promotions';
-import { Chatbot } from '@/components/chatbot';
 import { Brand } from '@/components/brand';
 import { site } from '@/lib/site';
 
@@ -38,6 +37,21 @@ export function HomeLanding({ initialQuery, initialPet, shouldScrollToOffers }: 
           <Image className="hero-logo" src="/logo.webp" width={112} height={112} alt="Central Promo Pet" priority />
           <h1>A gente garimpa.<br /><span>Você economiza.</span></h1>
           <p>As melhores promoções para o seu pet, encontradas todos os dias.</p>
+          <form action="/chat" method="get" className="assistant-cta">
+            <span className="assistant-icon"><Image src="/logo.webp" width={50} height={50} alt="" /></span>
+            <input name="q" aria-label="Pergunte para a IA da Central" placeholder="Pergunte para a IA da Central..." maxLength={200} required />
+            <button type="submit" aria-label="Iniciar conversa"><ArrowUpRight size={20} /></button>
+          </form>
+          <a href={site.whatsappUrl} target="_blank" rel="noopener noreferrer" className="button primary whatsapp-button"><MessageCircle size={19} /> Entrar no Grupo VIP do WhatsApp <ArrowUpRight size={17} /></a>
+        </div>
+      </section>
+
+      <section className="offers-section container" id="promocoes">
+        <div className="section-heading offers-heading">
+          <div><span className="eyebrow">SELECIONADOS PARA VOCÊ</span><h2>🔥 Garimpados de hoje</h2></div>
+          <button type="button" className="text-link" onClick={() => { setQuery(''); setActivePet('all'); }}>Ver tudo <ArrowUpRight size={16} /></button>
+        </div>
+        <div className="offer-controls">
           <form className="home-search" role="search" onSubmit={submitSearch}>
             <Search size={21} aria-hidden="true" />
             <input aria-label="O que você procura?" type="search" placeholder="O que você procura?" value={query} onChange={(event) => setQuery(event.target.value)} />
@@ -48,14 +62,6 @@ export function HomeLanding({ initialQuery, initialPet, shouldScrollToOffers }: 
               <span aria-hidden="true">{filter.icon}</span>{filter.label}
             </button>)}
           </div>
-          <a href={site.whatsappUrl} target="_blank" rel="noopener noreferrer" className="button primary whatsapp-button"><MessageCircle size={19} /> Entrar no Grupo VIP do WhatsApp <ArrowUpRight size={17} /></a>
-        </div>
-      </section>
-
-      <section className="offers-section container" id="promocoes">
-        <div className="section-heading offers-heading">
-          <div><span className="eyebrow">SELECIONADOS PARA VOCÊ</span><h2>🔥 Garimpados de hoje</h2></div>
-          <button type="button" className="text-link" onClick={() => { setQuery(''); setActivePet('all'); }}>Ver tudo <ArrowUpRight size={16} /></button>
         </div>
         <Promotions query={query} petFilter={activePet} />
         <p className="affiliate-note">Alguns links podem gerar uma comissão para a Central Promo Pet, sem custo adicional para você. Preços e disponibilidade são confirmados na loja.</p>
@@ -67,6 +73,5 @@ export function HomeLanding({ initialQuery, initialPet, shouldScrollToOffers }: 
       </section>
     </main>
     <footer className="container site-footer"><Brand /><span>Carinho pelo seu pet. Cuidado com seu bolso.</span><span>© {new Date().getFullYear()} Central Promo Pet</span></footer>
-    <Chatbot />
   </>;
 }

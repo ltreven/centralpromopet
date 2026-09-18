@@ -39,6 +39,6 @@ export const demoPromotions = [
     title: 'Coleira Plaquinha Nome Telefone Gato Cachorro Identificação Aço Inox',
     description: null, store: 'Mercado Livre', currency: 'BRL', coupon: 'BATEUPRONTOCUPOM', storeVerified: true,
     petTypes: ['dogs', 'cats'], priceCents: 2722, originalPriceCents: 3890,
-    affiliateUrl: 'https://meli.la/2Je3kJq', imageUrl: null, status: 'published',
+    affiliateUrl: 'https://meli.la/2Je3kJq', imageUrl: 'https://http2.mlstatic.com/D_NQ_NP_2X_697703-MLB108982576612_032026-F-coleira-plaquinha-nome-telefone-gato-cachorro-identificacao.webp', status: 'published',
   },
 ] as const;

@@ -62,9 +62,9 @@ The chart default disables the seed outside staging. Local development can load 
 refresh the same catalog with `npm run seed:demo --workspace
 @centralpromopet/database`; that command refuses to run with `NODE_ENV=production`.
 
-The five supplied Shopee images use their HTTPS CDN URLs in the seed. Staging refreshes
-an existing seed image only when it is still the old `/promotions/...` placeholder path
-or is empty, preserving any manually edited image URL.
+The six supplied Shopee and Mercado Livre images use their HTTPS CDN URLs in the seed.
+Staging refreshes an existing seed image only when it is still the old `/promotions/...`
+placeholder path or is empty, preserving any manually edited image URL.
 
 After a staging sync, check PostgreSQL, the migration and seed Jobs, API `/ready`,
 Web `/health`, the public HTTPS page, and an authenticated admin request. Bootstrap

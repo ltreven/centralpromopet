@@ -144,7 +144,15 @@ h2 { font-size: 32px; line-height: 1.2; letter-spacing: -1px; margin-block: 10px
 .search-hero h1 { font-size: clamp(42px, 6vw, 62px); line-height: 1.08; letter-spacing: -2.8px; margin: 18px 0 14px; }
 .search-hero h1 span { color: var(--green); }
 .search-hero-content > p { color: var(--muted); font-size: 16px; line-height: 1.6; margin: 0 0 24px; }
-.home-search { width: min(100%, 600px); min-height: 58px; display: flex; align-items: center; gap: 12px; padding: 6px 7px 6px 18px; background: white; border: 1px solid #d8dfd5; border-radius: 14px; box-shadow: 0 8px 24px #182b2309; color: #708075; }
+.assistant-cta { width: min(100%, 440px); display: flex; align-items: center; gap: 13px; padding: 13px 16px; margin: 0 0 15px; border: 1px solid #d8dfd5; border-radius: 17px; background: white; color: var(--ink); text-align: left; box-shadow: 0 8px 24px #182b2309; }
+.assistant-cta:hover { border-color: #aabdaf; box-shadow: 0 10px 28px #182b2314; }
+.assistant-icon { display: grid; place-items: center; flex: 0 0 54px; width: 54px; height: 54px; border-radius: 50%; background: #f1f4ec; }
+.assistant-icon img { width: 48px; height: 48px; border-radius: 50%; object-fit: contain; }
+.assistant-cta input { flex: 1; min-width: 0; border: 0; outline: none; background: transparent; color: var(--ink); font-size: 14px; }
+.assistant-cta input::placeholder { color: #718078; }
+.assistant-cta button { display: grid; place-items: center; flex: 0 0 42px; width: 42px; height: 42px; border: 0; border-radius: 11px; background: var(--green); color: white; }
+.assistant-cta button:hover { background: var(--green-dark); }
+.home-search { width: 100%; min-height: 58px; display: flex; align-items: center; gap: 12px; padding: 6px 7px 6px 18px; background: white; border: 1px solid #d8dfd5; border-radius: 14px; box-shadow: 0 8px 24px #182b2309; color: #708075; }
 .home-search input { flex: 1; min-width: 0; border: 0; outline: none; background: transparent; color: var(--ink); font-size: 15px; }
 .home-search input:focus-visible { outline: none; }
 .home-search input::placeholder { color: #849088; }
@@ -157,6 +165,9 @@ h2 { font-size: 32px; line-height: 1.2; letter-spacing: -1px; margin-block: 10px
 .offers-heading { align-items: center; margin-bottom: 22px; }
 .offers-heading h2 { font-size: 27px; }
 .offers-heading .text-link { padding: 8px 0; background: none; border: 0; }
+.offer-controls { display: flex; align-items: center; gap: 15px; margin-bottom: 22px; }
+.offer-controls .home-search { flex: 1; min-width: 220px; }
+.offer-controls .pet-filter { flex: 0 0 auto; gap: 8px; margin: 0; }
 .offers-grid { grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 18px; }
 .offer-card { padding: 14px; gap: 11px; }
 .offer-card h3 { min-height: 48px; font-size: 16px; line-height: 1.45; }
@@ -174,8 +185,6 @@ h2 { font-size: 32px; line-height: 1.2; letter-spacing: -1px; margin-block: 10px
 .community { padding: 30px 38px; }
 .community h2 { font-size: 25px; }
 .community p { max-width: 520px; }
-.chat-launcher { position: fixed; z-index: 50; right: 24px; bottom: 22px; display: inline-flex; align-items: center; justify-content: center; width: 58px; height: 58px; border-radius: 50%; background: var(--green); color: white; box-shadow: 0 10px 28px #183b2533; }
-.chat-launcher:hover { background: var(--green-dark); }
 .chat-page { max-width: 840px; padding-block: 24px 52px; }
 .chat-back { display: inline-flex; align-items: center; gap: 7px; color: var(--green); font-size: 13px; font-weight: 700; }
 .chat-page-heading { margin: 22px 0 20px; }
@@ -184,6 +193,7 @@ h2 { font-size: 32px; line-height: 1.2; letter-spacing: -1px; margin-block: 10px
 .chat-screen { height: min(620px, calc(100svh - 290px)); min-height: 450px; max-width: 760px; margin: 0 auto; display: flex; flex-direction: column; overflow: hidden; border: 1px solid var(--line); border-radius: 20px; background: white; box-shadow: 0 12px 36px #182b2310; }
 .chat-screen-header { display: flex; align-items: center; gap: 11px; padding: 15px 20px; background: var(--green); color: white; }
 .chat-avatar { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 50%; background: #ffffff22; }
+.chat-avatar img { border-radius: 50%; }
 .chat-screen-header > div { display: flex; flex: 1; flex-direction: column; gap: 3px; }
 .chat-screen-header strong { font-size: 14px; }
 .chat-screen-header small { color: #d9e9de; font-size: 11px; }
@@ -194,6 +204,7 @@ h2 { font-size: 32px; line-height: 1.2; letter-spacing: -1px; margin-block: 10px
 .chat-row { display: flex; align-items: flex-end; gap: 8px; max-width: 88%; }
 .chat-row.user { align-self: flex-end; }
 .chat-mini-avatar { display: grid; place-items: center; flex: 0 0 30px; width: 30px; height: 30px; border-radius: 50%; background: #f4eadb; }
+.chat-mini-avatar img { border-radius: 50%; }
 .chat-message { padding: 12px 14px; border-radius: 15px 15px 15px 4px; background: #f1f4ec; color: var(--ink); font-size: 13px; line-height: 1.55; }
 .chat-message p { margin: 0; }
 .chat-message.user { border-radius: 15px 15px 4px 15px; background: var(--green); color: white; }
@@ -211,9 +222,13 @@ h2 { font-size: 32px; line-height: 1.2; letter-spacing: -1px; margin-block: 10px
   .hero-logo { width: 76px; height: 76px; margin-bottom: 15px; }
   .search-hero h1 { font-size: 42px; letter-spacing: -1.8px; }
   .search-hero-content > p { font-size: 14px; }
+  .assistant-cta { max-width: 380px; }
   .pet-filter { gap: 7px; }
   .pet-filter-button { padding-inline: 11px; font-size: 12px; }
   .offers-heading h2 { font-size: 22px; }
+  .offer-controls { flex-direction: column; align-items: stretch; gap: 12px; }
+  .offer-controls .home-search { min-width: 0; }
+  .offer-controls .pet-filter { width: 100%; flex-wrap: nowrap; justify-content: center; }
   .offers-grid { grid-template-columns: minmax(0, 1fr); gap: 16px; }
   .offer-card { padding: 16px; gap: 12px; }
   .offer-card h3 { min-height: 0; font-size: 17px; }
@@ -221,7 +236,6 @@ h2 { font-size: 32px; line-height: 1.2; letter-spacing: -1px; margin-block: 10px
   .offer-card .price { align-items: flex-start; flex-direction: column; gap: 2px; }
   .offer-card .price del { order: 0; }
   .offer-card .offer-link { padding-inline: 12px; font-size: 14px; }
-  .chat-launcher { right: 14px; bottom: 14px; width: 52px; height: 52px; }
   .chat-page { padding-block: 18px 28px; }
   .chat-page-heading { margin: 16px 0; }
   .chat-screen { height: calc(100svh - 285px); min-height: 390px; border-radius: 16px; }
