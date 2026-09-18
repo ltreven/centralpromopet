@@ -202,12 +202,13 @@ h2 { font-size: 32px; line-height: 1.2; letter-spacing: -1px; margin-block: 10px
   .pet-filter { gap: 7px; }
   .pet-filter-button { padding-inline: 11px; font-size: 12px; }
   .offers-heading h2 { font-size: 22px; }
-  .offers-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-  .offer-card { padding: 10px; }
-  .offer-card h3 { font-size: 14px; }
+  .offers-grid { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  .offer-card { padding: 16px; gap: 12px; }
+  .offer-card h3 { min-height: 0; font-size: 17px; }
+  .offer-card .product-image { aspect-ratio: 1.35 / 1; }
   .offer-card .price { align-items: flex-start; flex-direction: column; gap: 2px; }
   .offer-card .price del { order: 0; }
-  .offer-card .offer-link { padding-inline: 8px; font-size: 12px; }
+  .offer-card .offer-link { padding-inline: 12px; font-size: 14px; }
   .chatbot { right: 14px; bottom: 14px; }
   .chat-panel { height: min(470px, calc(100dvh - 95px)); }
   .chat-launcher { min-height: 48px; }
