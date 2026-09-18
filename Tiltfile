@@ -12,13 +12,15 @@ local_resource(
 # ── 2. Run DB migrations after PostgreSQL is ready ───────────────────────────
 local_resource(
   'db-migrate',
-  cmd='npm run build --workspace @centralpromopet/database && npm run migrate --workspace @centralpromopet/database && npm run seed --workspace @centralpromopet/database',
+  cmd='npm run build --workspace @centralpromopet/database && npm run migrate --workspace @centralpromopet/database && npm run seed --workspace @centralpromopet/database && npm run seed:demo --workspace @centralpromopet/database',
   env={'DATABASE_URL': 'postgres://centralpromopet:centralpromopet@127.0.0.1:5433/centralpromopet'},
   resource_deps=['centralpromopet-postgresql'],
   deps=[
     'packages/database/drizzle',
     'packages/database/scripts/migrate.ts',
     'packages/database/seed/seed.ts',
+    'packages/database/seed/demo.ts',
+    'packages/database/src/demo-promotions.ts',
   ],
   labels=['setup'],
 )

@@ -21,6 +21,8 @@ postgres:
     storageClass: local-path
 migrations:
   enabled: true
+stagingSeed:
+  enabled: true
 ingress:
   className: traefik
   host: centralpromopet-stg.sabialabs.de

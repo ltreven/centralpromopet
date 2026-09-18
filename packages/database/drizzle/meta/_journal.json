@@ -22,6 +22,20 @@
       "when": 1789677865132,
       "tag": "0002_complete_blue_marvel",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1789739953283,
+      "tag": "0003_complete_cerise",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1789740723890,
+      "tag": "0004_public_albert_cleary",
+      "breakpoints": true
     }
   ]
 }

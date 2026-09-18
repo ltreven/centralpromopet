@@ -64,6 +64,9 @@ migrations:
   enabled: false
   backoffLimit: 3
 
+stagingSeed:
+  enabled: false
+
 ingress:
   enabled: true
   className: nginx

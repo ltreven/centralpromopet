@@ -52,6 +52,8 @@ test('real database: first login, authorization, revocation and active promotion
     await t.test('private routes reject anonymous requests', async () => {
       assert.equal((await request('/api/admin/status')).status, 401);
       assert.equal((await request('/api/account')).status, 401);
+      assert.equal((await request('/api/promotions/admin')).status, 401);
+      assert.equal((await request('/api/promotions', { title: 'Offer' })).status, 401);
       assert.equal((await request('/ready')).status, 200);
     });
     await t.test('rejects cross-origin and non-JSON mutations', async () => {
@@ -69,6 +71,8 @@ test('real database: first login, authorization, revocation and active promotion
       cookie = response.headers.get('set-cookie')!.split(';')[0];
       const denied = await request('/api/admin/status');
       assert.equal(denied.status, 403); assert.equal((await denied.json()).code, 'PASSWORD_EXPIRED');
+      assert.equal((await request('/api/promotions/admin')).status, 403);
+      assert.equal((await request('/api/promotions', { title: 'Offer' })).status, 403);
       assert.equal((await request('/api/account')).status, 403);
       assert.equal((await request('/api/identity/me')).status, 200);
     });
@@ -91,8 +95,42 @@ test('real database: first login, authorization, revocation and active promotion
       const clientCookie = response.headers.get('set-cookie')!.split(';')[0];
       assert.equal((await request('/api/account', undefined, clientCookie)).status, 200);
       assert.equal((await request('/api/admin/status', undefined, clientCookie)).status, 403);
+      assert.equal((await request('/api/promotions/admin', undefined, clientCookie)).status, 403);
+      assert.equal((await request('/api/promotions', { title: 'Offer' }, clientCookie)).status, 403);
       await db.update(users).set({ status: 'inactive' }).where(eq(users.id, inserted[1].id));
       assert.equal((await request('/api/identity/me', undefined, clientCookie)).status, 401);
+    });
+    await t.test('admins can register and list pet-specific promotions', async () => {
+      const valid = {
+        title: 'Coleira Plaquinha Nome Telefone Gato Cachorro Identificação Aço Inox',
+        store: 'Mercado Livre', currency: 'BRL', coupon: 'BATEUPRONTOCUPOM', storeVerified: true,
+        petTypes: ['dogs', 'cats'], originalPrice: '38.90', promotionalPrice: '27.22',
+        affiliateUrl: 'https://meli.la/2Je3kJq', endsAt: new Date(Date.now() + 86400000).toISOString(), status: 'published',
+      };
+      assert.equal((await request('/api/promotions', { ...valid, petTypes: [] })).status, 400);
+      const response = await request('/api/promotions', valid);
+      assert.equal(response.status, 201);
+      const body = await response.json();
+      offerIds.push(body.data.id);
+      assert.equal(body.data.priceCents, 2722);
+      assert.equal(body.data.originalPriceCents, 3890);
+      assert.equal(body.data.currency, 'BRL');
+      assert.deepEqual(body.data.petTypes, ['dogs', 'cats']);
+      assert.equal(body.data.coupon, 'BATEUPRONTOCUPOM');
+      assert.equal(body.data.storeVerified, true);
+      const listed = await request('/api/promotions/admin');
+      assert.equal(listed.status, 200);
+      assert.ok((await listed.json()).data.some((offer: { id: string }) => offer.id === body.data.id));
+
+      const noReferencePrice = await request('/api/promotions', {
+        ...valid, title: 'Oferta sem preço original', originalPrice: '', coupon: '', petTypes: ['cats'], status: 'draft',
+      });
+      assert.equal(noReferencePrice.status, 201);
+      const draft = await noReferencePrice.json();
+      offerIds.push(draft.data.id);
+      assert.equal(draft.data.originalPriceCents, null);
+      assert.equal(draft.data.coupon, null);
+      assert.equal(draft.data.status, 'draft');
     });
     await t.test('public offers exclude drafts, future and expired promotions', async () => {
       const now = Date.now();

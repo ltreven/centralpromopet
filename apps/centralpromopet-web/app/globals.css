@@ -63,6 +63,33 @@ h2 { font-size: 32px; line-height: 1.2; letter-spacing: -1px; margin-block: 10px
 .auth-form .form-error { color: #9b2525; background: #fff1ef; padding: 12px; border-radius: 8px; margin: 0; }
 .dashboard { padding-block: 50px; }
 .account-card { max-width: 760px; }
+.admin-page h1 { font-size: clamp(30px, 4vw, 42px); letter-spacing: -1.3px; margin: 10px 0; }
+.admin-intro { color: var(--muted); margin-bottom: 28px; }
+.admin-promotions { display: grid; gap: 42px; }
+.admin-panel { background: white; border: 1px solid var(--line); border-radius: 18px; padding: 30px; }
+.admin-panel h2, .admin-list h2 { font-size: 25px; margin: 10px 0; }
+.admin-panel > p { color: var(--muted); font-size: 14px; }
+.promotion-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.promotion-form > label { display: flex; flex-direction: column; gap: 8px; font-size: 13px; font-weight: 650; }
+.promotion-form input:not([type=checkbox]), .promotion-form select { min-height: 44px; border: 1px solid #cbd5ce; border-radius: 8px; padding: 10px 12px; background: white; width: 100%; }
+.promotion-form input[type=checkbox] { width: 18px; height: 18px; accent-color: var(--green); }
+.field-wide { grid-column: 1 / -1; }
+.pet-options { display: flex; flex-wrap: wrap; gap: 18px; border: 1px solid var(--line); border-radius: 10px; padding: 14px; }
+.pet-options legend { font-size: 13px; font-weight: 700; padding-inline: 6px; }
+.promotion-form .choice { display: inline-flex; flex-direction: row; align-items: center; gap: 8px; font-size: 13px; font-weight: 550; }
+.form-success { color: var(--green); background: #eef7ef; padding: 12px; border-radius: 8px; font-size: 13px; margin: 0; }
+.admin-list .section-heading { margin-bottom: 18px; }
+.admin-offer-list { display: grid; gap: 14px; }
+.admin-offer { background: white; border: 1px solid var(--line); border-radius: 14px; padding: 20px; display: grid; gap: 10px; }
+.admin-offer h3, .admin-offer p { margin: 0; }
+.admin-offer p, .admin-offer small { color: var(--muted); font-size: 13px; }
+.status-pill, .pet-tags span { display: inline-flex; align-items: center; border-radius: 99px; padding: 5px 10px; background: #eef3e8; color: var(--green); font-size: 11px; font-weight: 700; margin-right: 7px; }
+.status-pill.draft { background: #fff3df; color: #875400; }
+.status-pill.verified { background: #e8f4ed; }
+.offer-coupon { border: 1px dashed #cbd7ca; padding: 10px 12px; border-radius: 8px; color: var(--green); }
+.product-image { position: relative; overflow: hidden; width: 100%; aspect-ratio: 4 / 3; border-radius: 12px; background: #f1f4ec; }
+.product-image-placeholder { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 8px; color: #6b806f; font-size: 12px; }
+.product-image img { object-fit: contain; background: white; }
 .offers-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
 .offer-card { border: 1px solid var(--line); border-radius: 18px; background: white; padding: 24px; display: flex; flex-direction: column; gap: 14px; }
 .offer-card h3 { font-size: 20px; margin: 0; }
@@ -104,6 +131,86 @@ h2 { font-size: 32px; line-height: 1.2; letter-spacing: -1px; margin-block: 10px
   .community .button { width: 100%; }
   .site-footer { flex-direction: column; align-items: flex-start; gap: 18px; padding-block: 30px; }
   .auth-card { padding: 28px 22px; }
+  .admin-panel { padding: 22px 16px; }
+  .promotion-form { grid-template-columns: 1fr; }
+  .field-wide { grid-column: auto; }
+}
+
+/* Clean offer-first home and the lightweight catalog assistant. */
+.header-favorites { color: var(--green); display: inline-flex; align-items: center; padding: 8px; }
+.search-hero { background: #f3f5ee; border-bottom: 1px solid var(--line); }
+.search-hero-content { max-width: 760px; min-height: 460px; padding-block: 64px 50px; display: flex; flex-direction: column; align-items: center; text-align: center; }
+.hero-logo { width: 96px; height: 96px; object-fit: contain; border-radius: 50%; margin-bottom: 18px; box-shadow: 0 8px 24px rgb(35 55 35 / 10%); }
+.search-hero .eyebrow { color: var(--orange); }
+.search-hero h1 { font-size: clamp(42px, 6vw, 62px); line-height: 1.08; letter-spacing: -2.8px; margin: 18px 0 14px; }
+.search-hero h1 span { color: var(--green); }
+.search-hero-content > p { color: var(--muted); font-size: 16px; line-height: 1.6; margin: 0 0 24px; }
+.home-search { width: min(100%, 600px); min-height: 58px; display: flex; align-items: center; gap: 12px; padding: 6px 7px 6px 18px; background: white; border: 1px solid #d8dfd5; border-radius: 14px; box-shadow: 0 8px 24px #182b2309; color: #708075; }
+.home-search input { flex: 1; min-width: 0; border: 0; outline: none; background: transparent; color: var(--ink); font-size: 15px; }
+.home-search input:focus-visible { outline: none; }
+.home-search input::placeholder { color: #849088; }
+.home-search button { width: 44px; height: 44px; display: grid; place-items: center; border: 0; border-radius: 10px; background: var(--green); color: white; }
+.pet-filter { display: flex; flex-wrap: wrap; justify-content: center; gap: 9px; margin: 18px 0 22px; }
+.pet-filter-button { display: inline-flex; align-items: center; gap: 7px; min-height: 38px; padding: 7px 14px; border: 1px solid #d8dfd5; border-radius: 999px; background: #fff; color: var(--ink); font-size: 13px; font-weight: 650; }
+.pet-filter-button.active { color: white; background: var(--green); border-color: var(--green); }
+.whatsapp-button { min-height: 48px; padding: 12px 20px; }
+.hero-scroll { display: inline-flex; align-items: center; gap: 7px; margin-top: 21px; color: var(--muted); font-size: 12px; font-weight: 600; }
+.offers-heading { align-items: center; margin-bottom: 22px; }
+.offers-heading h2 { font-size: 27px; }
+.offers-heading .text-link { padding: 8px 0; background: none; border: 0; }
+.offers-grid { grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 18px; }
+.offer-card { padding: 14px; gap: 11px; }
+.offer-card h3 { min-height: 48px; font-size: 16px; line-height: 1.45; }
+.offer-card .product-image { aspect-ratio: 1.2 / 1; background: #f4f6f0; }
+.offer-storeline { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--muted); font-size: 11px; font-weight: 700; }
+.verified-store { color: var(--green); font-size: 10px; font-weight: 650; }
+.offer-card .pet-tags { min-height: 25px; }
+.offer-card .price { gap: 8px; }
+.offer-card .price strong { font-size: 23px; }
+.offer-card .price del { order: 2; font-size: 12px; }
+.discount-pill { display: inline-flex; align-items: center; border-radius: 6px; padding: 4px 6px; background: #eaf4e9; color: var(--green); font-size: 11px; font-weight: 750; }
+.offer-card > small { color: var(--muted); font-size: 11px; }
+.offer-link { min-height: 42px; padding: 10px 14px; margin-top: 2px; }
+.offers-section { padding-block: 52px 45px; }
+.community { padding: 30px 38px; }
+.community h2 { font-size: 25px; }
+.community p { max-width: 520px; }
+.chatbot { position: fixed; z-index: 50; right: 24px; bottom: 22px; display: flex; flex-direction: column; align-items: flex-end; gap: 12px; }
+.chat-launcher { display: inline-flex; align-items: center; gap: 9px; min-height: 52px; padding: 0 18px; border: 0; border-radius: 999px; background: var(--green); color: white; font-weight: 750; box-shadow: 0 10px 28px #183b2533; }
+.chat-panel { width: min(370px, calc(100vw - 32px)); height: 470px; display: flex; flex-direction: column; overflow: hidden; border: 1px solid var(--line); border-radius: 18px; background: #fffefa; box-shadow: 0 18px 55px #182b2322; }
+.chat-header { display: flex; align-items: center; gap: 10px; padding: 14px 16px; background: var(--green); color: white; }
+.chat-header > div { display: flex; flex: 1; flex-direction: column; gap: 3px; }
+.chat-header strong { font-size: 14px; }
+.chat-header small { color: #d9e9de; font-size: 11px; }
+.chat-avatar { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: #ffffff22; }
+.chat-close { display: grid; place-items: center; width: 34px; height: 34px; border: 0; border-radius: 50%; background: transparent; color: white; }
+.chat-messages { flex: 1; display: flex; flex-direction: column; align-items: flex-start; gap: 10px; overflow-y: auto; padding: 16px; }
+.chat-message { max-width: 88%; padding: 10px 12px; margin: 0; border-radius: 13px; background: #eef3e8; color: var(--ink); font-size: 13px; line-height: 1.5; }
+.chat-message.user { align-self: flex-end; background: var(--green); color: white; }
+.chat-suggestions { display: flex; flex-wrap: wrap; gap: 7px; padding: 0 14px 12px; }
+.chat-suggestions button { border: 1px solid #d8dfd5; border-radius: 99px; padding: 7px 10px; background: white; color: var(--green); font-size: 11px; font-weight: 650; }
+.chat-form { display: flex; gap: 8px; padding: 12px; border-top: 1px solid var(--line); }
+.chat-form input { min-width: 0; flex: 1; height: 42px; padding: 0 12px; border: 1px solid #d8dfd5; border-radius: 10px; }
+.chat-form button { display: grid; place-items: center; width: 42px; height: 42px; border: 0; border-radius: 10px; background: var(--green); color: white; }
+.chat-form button:disabled { cursor: not-allowed; }
+.chat-disclaimer { padding: 0 14px 12px; color: var(--muted); font-size: 10px; }
+@media (max-width: 600px) {
+  .search-hero-content { min-height: 0; padding-block: 48px 36px; }
+  .hero-logo { width: 76px; height: 76px; margin-bottom: 15px; }
+  .search-hero h1 { font-size: 42px; letter-spacing: -1.8px; }
+  .search-hero-content > p { font-size: 14px; }
+  .pet-filter { gap: 7px; }
+  .pet-filter-button { padding-inline: 11px; font-size: 12px; }
+  .offers-heading h2 { font-size: 22px; }
+  .offers-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .offer-card { padding: 10px; }
+  .offer-card h3 { font-size: 14px; }
+  .offer-card .price { align-items: flex-start; flex-direction: column; gap: 2px; }
+  .offer-card .price del { order: 0; }
+  .offer-card .offer-link { padding-inline: 8px; font-size: 12px; }
+  .chatbot { right: 14px; bottom: 14px; }
+  .chat-panel { height: min(470px, calc(100dvh - 95px)); }
+  .chat-launcher { min-height: 48px; }
 }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } .button { transition: none; } }
 

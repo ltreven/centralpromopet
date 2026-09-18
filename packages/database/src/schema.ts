@@ -4,6 +4,7 @@ import { sql } from 'drizzle-orm';
 export const userRole = pgEnum('user_role', ['admin', 'user']);
 export const userStatus = pgEnum('user_status', ['active', 'inactive']);
 export const promotionStatus = pgEnum('promotion_status', ['draft', 'published']);
+export const promotionPetType = pgEnum('promotion_pet_type', ['dogs', 'cats', 'birds', 'other']);
 const createdAt = () => timestamp('created_at', { withTimezone: true }).defaultNow().notNull();
 const updatedAt = () => timestamp('updated_at', { withTimezone: true }).defaultNow().notNull();
 
@@ -39,6 +40,10 @@ export const promotions = pgTable('promotions', {
   description: text('description'),
   imageUrl: text('image_url'),
   store: varchar('store', { length: 100 }).notNull(),
+  currency: varchar('currency', { length: 3 }).default('BRL').notNull(),
+  coupon: varchar('coupon', { length: 100 }),
+  storeVerified: boolean('store_verified').default(false).notNull(),
+  petTypes: promotionPetType('pet_types').array().default(sql`ARRAY['other']::promotion_pet_type[]`).notNull(),
   priceCents: integer('price_cents').notNull(),
   originalPriceCents: integer('original_price_cents'),
   affiliateUrl: text('affiliate_url').notNull(),
