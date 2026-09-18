@@ -14,8 +14,9 @@ variable `STAGING_ENABLED` equals `true`. No staging deployment has been perform
 Enable Actions' permission to create pull requests and configure branch rules so
 the promotion bot can merge its update. Validate these permissions before enabling.
 
-`staging.centralpromopet.com.br` is a proposed hostname; confirm DNS ownership and
-routing, then update `ingress.host` and `api.appOrigins` together if it changes.
+`centralpromopet-stg.sabialabs.de` is the staging hostname. Its DNS A record should
+point to the Hetzner ingress IP. Keep `ingress.host` and `api.appOrigins` aligned
+with this hostname if it changes. TLS uses the cluster's `letsencrypt-prod` issuer.
 Only Web is exposed through Traefik/TLS. It proxies `/api` to the private API
 service; cookies are HttpOnly, SameSite=Lax and Secure in production. No secret
 is bundled into browser code. `NEXT_PUBLIC_WHATSAPP_URL` is a public build-time

@@ -1,7 +1,7 @@
 imagePullSecrets:
   - name: ghcr-pull-secret
 api:
-  appOrigins: "https://staging.centralpromopet.com.br"
+  appOrigins: "https://centralpromopet-stg.sabialabs.de"
   image:
     repository: ghcr.io/ltreven/centralpromopet-api
     tag: 35f164ba9a4f7e2b84c9a023e76824599274b630
@@ -23,7 +23,7 @@ migrations:
   enabled: true
 ingress:
   className: traefik
-  host: staging.centralpromopet.com.br
+  host: centralpromopet-stg.sabialabs.de
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-prod
   tls:

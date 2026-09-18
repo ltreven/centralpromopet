@@ -79,7 +79,7 @@ o exemplo na raiz não é automaticamente lido pelo Next.js dentro do workspace.
 
 Estrutura preparada em [docs/staging.md](docs/staging.md). Provisionamento no Hetzner
 fica para a próxima etapa. O workflow de publicação só roda após configurar
-`STAGING_ENABLED=true`. Host proposto: `staging.centralpromopet.com.br`.
+`STAGING_ENABLED=true`. Host de staging: `centralpromopet-stg.sabialabs.de`.
 
 ## Marca
 
