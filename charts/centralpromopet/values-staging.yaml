@@ -4,13 +4,13 @@ api:
   appOrigins: "https://staging.centralpromopet.com.br"
   image:
     repository: ghcr.io/ltreven/centralpromopet-api
-    tag: bootstrap-pending
+    tag: 35f164ba9a4f7e2b84c9a023e76824599274b630
     pullPolicy: Always
   existingSecret: centralpromopet-api-secret
 web:
   image:
     repository: ghcr.io/ltreven/centralpromopet-web
-    tag: bootstrap-pending
+    tag: 35f164ba9a4f7e2b84c9a023e76824599274b630
     pullPolicy: Always
 postgres:
   auth:
