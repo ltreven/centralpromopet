@@ -1,7 +1,6 @@
-import { Brand } from '@/components/brand';
-import { Logout } from '@/components/logout';
+import { SiteHeader } from '@/components/site-header';
 import { requireSession } from '@/lib/session';
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   await requireSession();
-  return <><header className="site-header container"><Brand /><Logout /></header><main className="container dashboard">{children}</main></>;
+  return <><SiteHeader /><main className="container dashboard">{children}</main></>;
 }

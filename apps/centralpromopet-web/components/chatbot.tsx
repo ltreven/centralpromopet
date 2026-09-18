@@ -44,7 +44,9 @@ export function ChatScreen({ initialPrompt = '' }: { initialPrompt?: string }) {
     const welcome: Message = { id: 0, from: 'bot', text: 'Oi! Sou o assistente da Central Promo Pet. Conte o que seu pet precisa.' };
     return trimmedPrompt ? [welcome, { id: 1, from: 'user', text: trimmedPrompt }, responseFor(trimmedPrompt, 2)] : [welcome];
   });
-  useEffect(() => endOfMessages.current?.scrollIntoView({ behavior: 'smooth', block: 'end' }), [messages]);
+  useEffect(() => {
+    endOfMessages.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+  }, [messages]);
 
   function reply(value: string, pet?: PetFilter) {
     const trimmed = value.trim();

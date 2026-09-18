@@ -36,7 +36,10 @@ export function Promotions({ query, petFilter }: { query: string; petFilter: Pet
       <div className="offer-storeline"><span>{offer.store}</span>{offer.storeVerified && <span className="verified-store">✓ Loja verificada</span>}</div>
       <h3>{offer.title}</h3>
       <div className="pet-tags">{offer.petTypes.map((pet) => <span key={pet}>{petLabels[pet]}</span>)}</div>
-      <div className="price"><strong>{money(offer.priceCents, offer.currency)}</strong>{offer.originalPriceCents && <><del>{money(offer.originalPriceCents, offer.currency)}</del>{discount > 0 && <span className="discount-pill">-{discount}%</span>}</>}</div>
+      <div className="price">
+        {offer.originalPriceCents && <div className="price-before"><span>❌ De:</span><del>{money(offer.originalPriceCents, offer.currency)}</del></div>}
+        <div className="price-after"><span>✅ Por:</span><strong>{money(offer.priceCents, offer.currency)}</strong>{discount > 0 && <span className="discount-pill">-{discount}%</span>}</div>
+      </div>
       {offer.coupon && <p className="offer-coupon">Cupom: <strong>{offer.coupon}</strong></p>}
       <small>{offer.store}</small>
       {safeUrl(offer.affiliateUrl) && <a href={offer.affiliateUrl} target="_blank" rel="noopener noreferrer sponsored" className="button primary offer-link">Ver oferta <ArrowUpRight size={17} /></a>}

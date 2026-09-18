@@ -1,8 +1,8 @@
 'use client';
 
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
-import { ArrowUpRight, Search, MessageCircle } from 'lucide-react';
+import { ArrowUpRight, Search, MessageCircle, X } from 'lucide-react';
 import { SiteHeader } from '@/components/site-header';
 import { Promotions, PetFilter } from '@/components/promotions';
 import { Brand } from '@/components/brand';
@@ -17,6 +17,11 @@ const petFilters: { value: PetFilter; label: string; icon: string }[] = [
 export function HomeLanding({ initialQuery, initialPet, shouldScrollToOffers }: { initialQuery: string; initialPet: PetFilter; shouldScrollToOffers: boolean }) {
   const [query, setQuery] = useState(initialQuery);
   const [activePet, setActivePet] = useState<PetFilter>(initialPet);
+  const [productSearchOpen, setProductSearchOpen] = useState(Boolean(initialQuery));
+  const productSearchInput = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (productSearchOpen) productSearchInput.current?.focus();
+  }, [productSearchOpen]);
   useEffect(() => {
     if (shouldScrollToOffers) {
       requestAnimationFrame(() => document.getElementById('promocoes')?.scrollIntoView());
@@ -49,14 +54,13 @@ export function HomeLanding({ initialQuery, initialPet, shouldScrollToOffers }: 
       <section className="offers-section container" id="promocoes">
         <div className="section-heading offers-heading">
           <div><span className="eyebrow">SELECIONADOS PARA VOCÊ</span><h2>🔥 Garimpados de hoje</h2></div>
-          <button type="button" className="text-link" onClick={() => { setQuery(''); setActivePet('all'); }}>Ver tudo <ArrowUpRight size={16} /></button>
         </div>
         <div className="offer-controls">
-          <form className="home-search" role="search" onSubmit={submitSearch}>
+          {productSearchOpen ? <form className="home-search" role="search" onSubmit={submitSearch}>
             <Search size={21} aria-hidden="true" />
-            <input aria-label="O que você procura?" type="search" placeholder="O que você procura?" value={query} onChange={(event) => setQuery(event.target.value)} />
-            <button type="submit" aria-label="Buscar ofertas"><Search size={19} /></button>
-          </form>
+            <input ref={productSearchInput} aria-label="O que você procura?" type="search" placeholder="O que você procura?" value={query} onChange={(event) => setQuery(event.target.value)} />
+            <button type="button" className="home-search-close" aria-label="Fechar busca de produtos" onClick={() => { setQuery(''); setProductSearchOpen(false); }}><X size={19} /></button>
+          </form> : <button type="button" className="home-search-toggle" aria-label="Buscar produtos" aria-expanded="false" onClick={() => setProductSearchOpen(true)}><Search size={21} /></button>}
           <div className="pet-filter" aria-label="Filtrar promoções por pet">
             {petFilters.map((filter) => <button type="button" key={filter.value} className={activePet === filter.value ? 'pet-filter-button active' : 'pet-filter-button'} aria-pressed={activePet === filter.value} onClick={() => setActivePet(filter.value)}>
               <span aria-hidden="true">{filter.icon}</span>{filter.label}

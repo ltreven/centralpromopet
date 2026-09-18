@@ -26,6 +26,7 @@ const createPromotionSchema = z.object({
 }).refine((value) => new Date(value.endsAt).getTime() > Date.now(), {
   path: ['endsAt'], message: 'A validade precisa terminar no futuro.',
 });
+const promotionIdSchema = z.string().uuid();
 
 function moneyToCents(value: string) {
   const [whole, fraction = ''] = value.replace(',', '.').split('.');
@@ -71,5 +72,42 @@ promotionsRouter.post('/', requireAuth, requireCurrentPassword, requireAdmin, as
       status: value.status,
     }).returning();
     res.status(201).json({ success: true, data });
+  } catch (error) { next(error); }
+});
+
+promotionsRouter.patch('/:id', requireAuth, requireCurrentPassword, requireAdmin, async (req, res, next) => {
+  try {
+    const id = promotionIdSchema.safeParse(req.params.id);
+    if (!id.success) return res.status(400).json({ success: false, message: 'Identificador de promoção inválido.' });
+    const parsed = createPromotionSchema.safeParse(req.body);
+    if (!parsed.success) return res.status(400).json({ success: false, message: parsed.error.issues[0]?.message || 'Confira os dados da promoção.' });
+    const value = parsed.data;
+    const [data] = await db.update(promotions).set({
+      title: value.title,
+      store: value.store,
+      currency: value.currency,
+      coupon: value.coupon || null,
+      imageUrl: value.imageUrl || null,
+      storeVerified: value.storeVerified,
+      petTypes: value.petTypes,
+      originalPriceCents: value.originalPrice ? moneyToCents(value.originalPrice) : null,
+      priceCents: moneyToCents(value.promotionalPrice),
+      affiliateUrl: value.affiliateUrl,
+      endsAt: new Date(value.endsAt),
+      status: value.status,
+      updatedAt: new Date(),
+    }).where(eq(promotions.id, id.data)).returning();
+    if (!data) return res.status(404).json({ success: false, message: 'Promoção não encontrada.' });
+    res.json({ success: true, data });
+  } catch (error) { next(error); }
+});
+
+promotionsRouter.delete('/:id', requireAuth, requireCurrentPassword, requireAdmin, async (req, res, next) => {
+  try {
+    const id = promotionIdSchema.safeParse(req.params.id);
+    if (!id.success) return res.status(400).json({ success: false, message: 'Identificador de promoção inválido.' });
+    const [data] = await db.delete(promotions).where(eq(promotions.id, id.data)).returning({ id: promotions.id });
+    if (!data) return res.status(404).json({ success: false, message: 'Promoção não encontrada.' });
+    res.json({ success: true, data });
   } catch (error) { next(error); }
 });

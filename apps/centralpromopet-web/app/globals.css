@@ -77,6 +77,9 @@ h2 { font-size: 32px; line-height: 1.2; letter-spacing: -1px; margin-block: 10px
 .pet-options { display: flex; flex-wrap: wrap; gap: 18px; border: 1px solid var(--line); border-radius: 10px; padding: 14px; }
 .pet-options legend { font-size: 13px; font-weight: 700; padding-inline: 6px; }
 .promotion-form .choice { display: inline-flex; flex-direction: row; align-items: center; gap: 8px; font-size: 13px; font-weight: 550; }
+.form-actions, .admin-offer-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+.button.danger { border-color: #e8c9c5; background: #fff4f2; color: #9b2525; }
+.button.danger:hover { background: #ffe9e5; }
 .form-success { color: var(--green); background: #eef7ef; padding: 12px; border-radius: 8px; font-size: 13px; margin: 0; }
 .admin-list .section-heading { margin-bottom: 18px; }
 .admin-offer-list { display: grid; gap: 14px; }
@@ -157,6 +160,10 @@ h2 { font-size: 32px; line-height: 1.2; letter-spacing: -1px; margin-block: 10px
 .home-search input:focus-visible { outline: none; }
 .home-search input::placeholder { color: #849088; }
 .home-search button { width: 44px; height: 44px; display: grid; place-items: center; border: 0; border-radius: 10px; background: var(--green); color: white; }
+.home-search .home-search-close { flex: 0 0 40px; width: 40px; height: 40px; background: transparent; color: var(--muted); }
+.home-search .home-search-close:hover { background: #f1f4ec; color: var(--ink); }
+.home-search-toggle { display: grid; place-items: center; flex: 0 0 46px; width: 46px; height: 46px; border: 1px solid #d8dfd5; border-radius: 12px; background: #fff; color: var(--green); }
+.home-search-toggle:hover { border-color: #aabdaf; background: #f8faf6; }
 .pet-filter { display: flex; flex-wrap: wrap; justify-content: center; gap: 9px; margin: 18px 0 22px; }
 .pet-filter-button { display: inline-flex; align-items: center; gap: 7px; min-height: 38px; padding: 7px 14px; border: 1px solid #d8dfd5; border-radius: 999px; background: #fff; color: var(--ink); font-size: 13px; font-weight: 650; }
 .pet-filter-button.active { color: white; background: var(--green); border-color: var(--green); }
@@ -166,18 +173,21 @@ h2 { font-size: 32px; line-height: 1.2; letter-spacing: -1px; margin-block: 10px
 .offers-heading h2 { font-size: 27px; }
 .offers-heading .text-link { padding: 8px 0; background: none; border: 0; }
 .offer-controls { display: flex; align-items: center; gap: 15px; margin-bottom: 22px; }
-.offer-controls .home-search { flex: 1; min-width: 220px; }
+.offer-controls .home-search { flex: 0 1 350px; min-width: 220px; }
 .offer-controls .pet-filter { flex: 0 0 auto; gap: 8px; margin: 0; }
-.offers-grid { grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 18px; }
+.offers-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
 .offer-card { padding: 14px; gap: 11px; }
-.offer-card h3 { min-height: 48px; font-size: 16px; line-height: 1.45; }
+.offer-card h3 { min-height: 48px; font-size: 17px; line-height: 1.45; }
 .offer-card .product-image { aspect-ratio: 1.2 / 1; background: #f4f6f0; }
 .offer-storeline { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--muted); font-size: 11px; font-weight: 700; }
 .verified-store { color: var(--green); font-size: 10px; font-weight: 650; }
 .offer-card .pet-tags { min-height: 25px; }
-.offer-card .price { gap: 8px; }
-.offer-card .price strong { font-size: 23px; }
-.offer-card .price del { order: 2; font-size: 12px; }
+.offer-card .price { display: flex; flex-direction: column; align-items: flex-start; gap: 5px; }
+.price-before, .price-after { display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px; }
+.price-before { color: var(--muted); font-size: 14px; }
+.price-before del { color: var(--muted); }
+.price-after { color: var(--green); font-size: 16px; font-weight: 700; }
+.offer-card .price-after strong { font-size: 25px; }
 .discount-pill { display: inline-flex; align-items: center; border-radius: 6px; padding: 4px 6px; background: #eaf4e9; color: var(--green); font-size: 11px; font-weight: 750; }
 .offer-card > small { color: var(--muted); font-size: 11px; }
 .offer-link { min-height: 42px; padding: 10px 14px; margin-top: 2px; }
@@ -185,6 +195,9 @@ h2 { font-size: 32px; line-height: 1.2; letter-spacing: -1px; margin-block: 10px
 .community { padding: 30px 38px; }
 .community h2 { font-size: 25px; }
 .community p { max-width: 520px; }
+@media (min-width: 601px) and (max-width: 900px) {
+  .offers-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
 .chat-page { max-width: 840px; padding-block: 24px 52px; }
 .chat-back { display: inline-flex; align-items: center; gap: 7px; color: var(--green); font-size: 13px; font-weight: 700; }
 .chat-page-heading { margin: 22px 0 20px; }
@@ -226,15 +239,17 @@ h2 { font-size: 32px; line-height: 1.2; letter-spacing: -1px; margin-block: 10px
   .pet-filter { gap: 7px; }
   .pet-filter-button { padding-inline: 11px; font-size: 12px; }
   .offers-heading h2 { font-size: 22px; }
-  .offer-controls { flex-direction: column; align-items: stretch; gap: 12px; }
-  .offer-controls .home-search { min-width: 0; }
-  .offer-controls .pet-filter { width: 100%; flex-wrap: nowrap; justify-content: center; }
+  .offer-controls { flex-direction: row; align-items: center; justify-content: center; flex-wrap: nowrap; gap: 7px; }
+  .offer-controls:has(.home-search) { flex-wrap: wrap; }
+  .offer-controls .home-search { width: 100%; min-width: 0; flex: 0 0 100%; }
+  .offer-controls .home-search-toggle { flex: 0 0 40px; width: 40px; height: 40px; }
+  .offer-controls .pet-filter { width: auto; flex: 0 1 auto; flex-wrap: nowrap; justify-content: center; gap: 5px; }
+  .offer-controls .pet-filter-button { min-height: 36px; gap: 4px; padding: 6px 7px; font-size: 11px; }
   .offers-grid { grid-template-columns: minmax(0, 1fr); gap: 16px; }
   .offer-card { padding: 16px; gap: 12px; }
   .offer-card h3 { min-height: 0; font-size: 17px; }
   .offer-card .product-image { aspect-ratio: 1.35 / 1; }
-  .offer-card .price { align-items: flex-start; flex-direction: column; gap: 2px; }
-  .offer-card .price del { order: 0; }
+  .offer-card .price { align-items: flex-start; flex-direction: column; gap: 5px; }
   .offer-card .offer-link { padding-inline: 12px; font-size: 14px; }
   .chat-page { padding-block: 18px 28px; }
   .chat-page-heading { margin: 16px 0; }
