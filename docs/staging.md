@@ -42,8 +42,8 @@ are applied in sync wave -2; the migration Job runs in wave -1 before the apps.
 This is a regular Argo sync-wave Job, not a PreSync hook. A separate, staging-only
 seed Job loads the six explicitly supplied demo offers after migrations. It is gated
 by `stagingSeed.enabled`, verifies the `centralpromopet-staging` namespace, and uses
-fixed IDs with conflict-do-nothing so later deploys preserve admin edits. The chart's
-default keeps this seed disabled outside staging. Local development uses
+fixed IDs; only missing or old placeholder images are refreshed, preserving other
+admin edits. The chart's default keeps this seed disabled outside staging. Local development uses
 `npm run seed:demo --workspace @centralpromopet/database`; that command refuses to run
 when `NODE_ENV=production`. Migration Jobs are named by image SHA; deploy migrations
 must be backward compatible. A successful migration is recorded by Drizzle and can
@@ -62,9 +62,9 @@ The chart default disables the seed outside staging. Local development can load 
 refresh the same catalog with `npm run seed:demo --workspace
 @centralpromopet/database`; that command refuses to run with `NODE_ENV=production`.
 
-The supplied image filenames are stored as `/promotions/<filename>`. The image
-files are not in the repository yet, so public cards show an image placeholder until
-matching files are added under `apps/centralpromopet-web/public/promotions/`.
+The five supplied Shopee images use their HTTPS CDN URLs in the seed. Staging refreshes
+an existing seed image only when it is still the old `/promotions/...` placeholder path
+or is empty, preserving any manually edited image URL.
 
 After a staging sync, check PostgreSQL, the migration and seed Jobs, API `/ready`,
 Web `/health`, the public HTTPS page, and an authenticated admin request. Bootstrap

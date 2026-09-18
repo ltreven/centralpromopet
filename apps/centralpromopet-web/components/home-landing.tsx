@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 import Image from 'next/image';
 import { ArrowUpRight, Search, MessageCircle } from 'lucide-react';
 import { SiteHeader } from '@/components/site-header';
@@ -15,18 +15,17 @@ const petFilters: { value: PetFilter; label: string; icon: string }[] = [
   { value: 'all', label: 'Tudo', icon: '✨' },
 ];
 
-export function HomeLanding() {
-  const [query, setQuery] = useState('');
-  const [activePet, setActivePet] = useState<PetFilter>('all');
+export function HomeLanding({ initialQuery, initialPet, shouldScrollToOffers }: { initialQuery: string; initialPet: PetFilter; shouldScrollToOffers: boolean }) {
+  const [query, setQuery] = useState(initialQuery);
+  const [activePet, setActivePet] = useState<PetFilter>(initialPet);
+  useEffect(() => {
+    if (shouldScrollToOffers) {
+      requestAnimationFrame(() => document.getElementById('promocoes')?.scrollIntoView());
+    }
+  }, [shouldScrollToOffers]);
 
   function submitSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    document.getElementById('promocoes')?.scrollIntoView({ behavior: 'smooth' });
-  }
-
-  function searchFromChat(value: string, pet?: PetFilter) {
-    setQuery(pet ? '' : value);
-    setActivePet(pet || 'all');
     document.getElementById('promocoes')?.scrollIntoView({ behavior: 'smooth' });
   }
 
@@ -68,6 +67,6 @@ export function HomeLanding() {
       </section>
     </main>
     <footer className="container site-footer"><Brand /><span>Carinho pelo seu pet. Cuidado com seu bolso.</span><span>© {new Date().getFullYear()} Central Promo Pet</span></footer>
-    <Chatbot onSearch={searchFromChat} />
+    <Chatbot />
   </>;
 }
