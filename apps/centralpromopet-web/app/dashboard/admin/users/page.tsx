@@ -8,7 +8,7 @@ export default async function AdminUsersPage() {
   return <section className="admin-page">
     <span className="eyebrow">ADMINISTRAÇÃO</span>
     <h1>Usuários</h1>
-    <p className="admin-intro">Cadastre acessos com senha temporária e escolha o perfil de cada pessoa.</p>
+    <p className="admin-intro">Cadastre acessos com senha temporária e altere nome, e-mail, status e perfil de cada pessoa.</p>
     <AdminUsers />
   </section>;
 }

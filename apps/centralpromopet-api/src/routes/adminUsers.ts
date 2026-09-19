@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
-import { desc } from 'drizzle-orm';
+import { desc, eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { db, users } from '@centralpromopet/database';
 import { requireAdmin, requireAuth, requireCurrentPassword } from '../auth';
@@ -13,6 +13,13 @@ const createUserSchema = z.object({
   temporaryPassword: password,
   role: z.enum(['admin', 'user']),
 }).strict();
+const updateUserSchema = z.object({
+  email: z.string().trim().toLowerCase().email().max(255),
+  displayName: z.string().trim().min(1).max(100),
+  role: z.enum(['admin', 'user']),
+  status: z.enum(['active', 'inactive']),
+}).strict();
+const userIdSchema = z.string().uuid();
 
 adminUsersRouter.get('/', requireAuth, requireCurrentPassword, requireAdmin, async (_req, res, next) => {
   try {
@@ -54,4 +61,22 @@ adminUsersRouter.post('/', requireAuth, requireCurrentPassword, requireAdmin, as
     if (!created) return res.status(409).json({ success: false, message: 'Já existe um usuário com esse e-mail.' });
     res.status(201).json({ success: true, data: created });
   } catch (error) { next(error); }
+});
+
+adminUsersRouter.patch('/:id', requireAuth, requireCurrentPassword, requireAdmin, async (req, res, next) => {
+  const id = userIdSchema.safeParse(req.params.id);
+  if (!id.success) return res.status(400).json({ success: false, message: 'Identificador de usuário inválido.' });
+  const parsed = updateUserSchema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ success: false, message: parsed.error.issues[0]?.message || 'Confira os dados do usuário.' });
+  try {
+    const [updated] = await db.update(users).set({ ...parsed.data, updatedAt: new Date() }).where(eq(users.id, id.data)).returning({
+      id: users.id, email: users.email, displayName: users.displayName, role: users.role, status: users.status,
+      passwordExpired: users.passwordExpired, createdAt: users.createdAt,
+    });
+    if (!updated) return res.status(404).json({ success: false, message: 'Usuário não encontrado.' });
+    res.json({ success: true, data: updated });
+  } catch (error: unknown) {
+    if (error && typeof error === 'object' && 'code' in error && error.code === '23505') return res.status(409).json({ success: false, message: 'Já existe um usuário com esse e-mail.' });
+    next(error);
+  }
 });
