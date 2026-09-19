@@ -7,8 +7,8 @@ import { GoogleCredential, oneTapSuppressedKey } from '@/lib/google';
 import { loginDestination, User } from '@/lib/user';
 
 type Config = { enabled: boolean; clientId: string | null; oneTapEnabled: boolean };
-export function GoogleSignIn({ oneTapOnly = false, mode = 'login', password = '', onLinked }: {
-  oneTapOnly?: boolean; mode?: 'login' | 'link'; password?: string; onLinked?: () => void;
+export function GoogleSignIn({ oneTapOnly = false, mode = 'login', password = '', onLinked, next }: {
+  oneTapOnly?: boolean; mode?: 'login' | 'link'; password?: string; onLinked?: () => void; next?: string;
 }) {
   const router = useRouter();
   const [config, setConfig] = useState<Config | null>(null);
@@ -50,7 +50,7 @@ export function GoogleSignIn({ oneTapOnly = false, mode = 'login', password = ''
         else {
           try { sessionStorage.removeItem(oneTapSuppressedKey); } catch { /* Storage may be unavailable. */ }
           // Full navigation also refreshes the anonymous landing header after One Tap.
-          window.location.assign(loginDestination(result.data.user as User));
+          window.location.assign(loginDestination(result.data.user as User, next));
         }
       } catch (err) { if (!cancelled) setError(err instanceof Error ? err.message : 'Não foi possível entrar com Google.'); }
       finally { if (!cancelled) setBusy(false); submitting = false; }
@@ -72,7 +72,7 @@ export function GoogleSignIn({ oneTapOnly = false, mode = 'login', password = ''
       })
       .catch((err) => { if (!cancelled && err.name !== 'AbortError') setError(err.message || 'Não foi possível iniciar o login com Google.'); });
     return () => { cancelled = true; controller.abort(); google.cancel(); };
-  }, [config, sdkReady, attempt, mode, oneTapOnly, router]);
+  }, [config, sdkReady, attempt, mode, oneTapOnly, router, next]);
 
   if (config && !config.enabled) return mode === 'link' ? <p>O login com Google ainda não está disponível.</p> : null;
   return <>

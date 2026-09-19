@@ -34,6 +34,7 @@ export function SiteHeader() {
         <div className="account-menu-panel">
           <span className="account-role">{user.role === 'admin' ? 'Administrador' : 'Minha conta'}</span>
           {user.passwordExpired ? <Link href="/change-password">Trocar senha temporária</Link> : <>
+            <Link href="/dashboard/pets">Meu Pet</Link>
             {user.role === 'admin' && <>
               <Link href="/dashboard/admin">Produtos e promoções</Link>
               <Link href="/dashboard/admin/users">Usuários</Link>

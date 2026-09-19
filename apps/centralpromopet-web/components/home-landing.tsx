@@ -2,11 +2,14 @@
 
 import { FormEvent, useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { ArrowUpRight, Search, MessageCircle, X } from 'lucide-react';
 import { SiteHeader } from '@/components/site-header';
 import { Promotions, PetFilter } from '@/components/promotions';
 import { Brand } from '@/components/brand';
 import { site } from '@/lib/site';
+import { Pet } from '@/lib/pets';
+import { User } from '@/lib/user';
 
 const petFilters: { value: PetFilter; label: string; icon: string }[] = [
   { value: 'dogs', label: 'Cães', icon: '🐶' },
@@ -17,6 +20,9 @@ const petFilters: { value: PetFilter; label: string; icon: string }[] = [
 export function HomeLanding({ initialQuery, initialPet, shouldScrollToOffers }: { initialQuery: string; initialPet: PetFilter; shouldScrollToOffers: boolean }) {
   const [query, setQuery] = useState(initialQuery);
   const [activePet, setActivePet] = useState<PetFilter>(initialPet);
+  const [pets, setPets] = useState<Pet[]>([]);
+  const [user, setUser] = useState<User | null>(null);
+  const [selectedPetId, setSelectedPetId] = useState<string | null>(null);
   const [productSearchOpen, setProductSearchOpen] = useState(Boolean(initialQuery));
   const productSearchInput = useRef<HTMLInputElement>(null);
   useEffect(() => {
@@ -27,6 +33,13 @@ export function HomeLanding({ initialQuery, initialPet, shouldScrollToOffers }: 
       requestAnimationFrame(() => document.getElementById('promocoes')?.scrollIntoView());
     }
   }, [shouldScrollToOffers]);
+  useEffect(() => {
+    fetch('/api/identity/me', { cache: 'no-store' }).then(async (response) => response.ok ? setUser((await response.json()).data) : undefined).catch(() => {});
+    fetch('/api/pets', { cache: 'no-store' }).then(async (response) => response.ok ? (await response.json()).data as Pet[] : []).then((data) => {
+      setPets(data);
+      if (initialPet === 'all' && data[0]) { setSelectedPetId(data[0].id); setActivePet(data[0].type); }
+    }).catch(() => {});
+  }, [initialPet]);
 
   function submitSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -53,7 +66,7 @@ export function HomeLanding({ initialQuery, initialPet, shouldScrollToOffers }: 
 
       <section className="offers-section container" id="promocoes">
         <div className="section-heading offers-heading">
-          <div><span className="eyebrow">SELECIONADOS PARA VOCÊ</span><h2>🔥 Garimpados de hoje</h2></div>
+          <div><span className="eyebrow">SELECIONADOS PARA VOCÊ</span><h2>🔥 Garimpados de hoje{selectedPetId ? ` para ${pets.find((pet) => pet.id === selectedPetId)?.name || ''}` : ''}</h2></div>
         </div>
         <div className="offer-controls">
           {productSearchOpen ? <form className="home-search" role="search" onSubmit={submitSearch}>
@@ -62,7 +75,7 @@ export function HomeLanding({ initialQuery, initialPet, shouldScrollToOffers }: 
             <button type="button" className="home-search-close" aria-label="Fechar busca de produtos" onClick={() => { setQuery(''); setProductSearchOpen(false); }}><X size={19} /></button>
           </form> : <button type="button" className="home-search-toggle" aria-label="Buscar produtos" aria-expanded="false" onClick={() => setProductSearchOpen(true)}><Search size={21} /></button>}
           <div className="pet-filter" aria-label="Filtrar promoções por pet">
-            {petFilters.map((filter) => <button type="button" key={filter.value} className={activePet === filter.value ? 'pet-filter-button active' : 'pet-filter-button'} aria-pressed={activePet === filter.value} onClick={() => setActivePet(filter.value)}>
+            {petFilters.map((filter) => <button type="button" key={filter.value} className={activePet === filter.value ? 'pet-filter-button active' : 'pet-filter-button'} aria-pressed={activePet === filter.value} onClick={() => { setActivePet(filter.value); setSelectedPetId(null); }}>
               <span aria-hidden="true">{filter.icon}</span>{filter.label}
             </button>)}
           </div>
@@ -74,6 +87,10 @@ export function HomeLanding({ initialQuery, initialPet, shouldScrollToOffers }: 
       <section className="community container">
         <div><span className="eyebrow">NO SEU WHATSAPP</span><h2>Quer receber os melhores garimpos?</h2><p>Entre no Grupo VIP e receba promoções que valem a pena direto no WhatsApp.</p></div>
         <a href={site.whatsappUrl} target="_blank" rel="noopener noreferrer" className="button light"><MessageCircle size={19} /> Entrar no Grupo VIP <ArrowUpRight size={17} /></a>
+      </section>
+      <section className="pet-invite container">
+        <div><span className="eyebrow">DO JEITINHO DELE</span><h2>Quer receber novidades para o seu pet?</h2><p>Cadastre seu companheiro e escolha receber promoções e novidades pensadas para ele.</p></div>
+        <Link href={user ? (user.passwordExpired ? '/change-password?next=%2Fdashboard%2Fpets' : '/dashboard/pets') : '/login?next=%2Fdashboard%2Fpets'} className="button primary">Cadastrar meu pet <ArrowUpRight size={17} /></Link>
       </section>
     </main>
     <footer className="container site-footer"><Brand /><span>Carinho pelo seu pet. Cuidado com seu bolso.</span><span>© {new Date().getFullYear()} Central Promo Pet</span></footer>

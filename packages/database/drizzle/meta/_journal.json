@@ -36,6 +36,27 @@
       "when": 1789740723890,
       "tag": "0004_public_albert_cleary",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1789849358523,
+      "tag": "0005_cloudy_la_nuit",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1789850646094,
+      "tag": "0006_mighty_patriot",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1789851040124,
+      "tag": "0007_nappy_human_cannonball",
+      "breakpoints": true
     }
   ]
 }

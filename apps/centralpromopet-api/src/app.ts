@@ -5,6 +5,7 @@ import { db } from '@centralpromopet/database';
 import { createIdentityRouter } from './routes/identity';
 import { promotionsRouter } from './routes/promotions';
 import { adminUsersRouter } from './routes/adminUsers';
+import { petsRouter } from './routes/pets';
 import { requireAuth, requireAdmin, requireCurrentPassword, validateJwtSecret } from './auth';
 
 import { GoogleVerifier } from './google';
@@ -36,6 +37,7 @@ app.get('/ready', async (_req, res) => {
   catch { res.status(503).json({ status: 'unavailable' }); }
 });
 app.use('/api/promotions', promotionsRouter);
+app.use('/api/pets', petsRouter);
 app.use('/api/admin/users', adminUsersRouter);
 app.use('/api/identity', createIdentityRouter(options.googleVerifier));
 app.use('/api', requireAuth, requireCurrentPassword);

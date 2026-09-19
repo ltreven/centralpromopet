@@ -2,7 +2,7 @@
 import { FormEvent, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { loginDestination } from '@/lib/user';
-export function AuthForm({ changePassword = false }: { changePassword?: boolean }) {
+export function AuthForm({ changePassword = false, next }: { changePassword?: boolean; next?: string }) {
   const router = useRouter();
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -17,7 +17,7 @@ export function AuthForm({ changePassword = false }: { changePassword?: boolean 
       const result = await response.json();
       if (!response.ok) throw new Error(result.message || 'Não foi possível continuar.');
       const user = changePassword ? await fetch('/api/identity/me', { cache: 'no-store' }).then(async (response) => { if (!response.ok) throw new Error('Não foi possível verificar sua sessão.'); return (await response.json()).data; }) : result.data.user;
-      const destination = loginDestination(user);
+      const destination = loginDestination(user, next);
       if (destination === '/') window.location.assign('/');
       else { router.replace(destination); router.refresh(); }
     } catch (err) { setError(err instanceof Error ? err.message : 'Não foi possível continuar.'); }

@@ -5,6 +5,7 @@ export const userRole = pgEnum('user_role', ['admin', 'user']);
 export const userStatus = pgEnum('user_status', ['active', 'inactive']);
 export const promotionStatus = pgEnum('promotion_status', ['draft', 'published']);
 export const promotionPetType = pgEnum('promotion_pet_type', ['dogs', 'cats', 'birds', 'other']);
+export const petType = pgEnum('pet_type', ['dogs', 'cats', 'birds', 'other']);
 const createdAt = () => timestamp('created_at', { withTimezone: true }).defaultNow().notNull();
 const updatedAt = () => timestamp('updated_at', { withTimezone: true }).defaultNow().notNull();
 
@@ -25,6 +26,24 @@ export const users = pgTable('users', {
   updatedAt: updatedAt(),
 }, (table) => ({
   hasLoginMethod: check('users_has_login_method', sql`${table.passwordHash} IS NOT NULL OR ${table.googleSubject} IS NOT NULL`),
+}));
+
+export const pets = pgTable('pets', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  name: varchar('name', { length: 80 }).notNull(),
+  type: petType('type').notNull(),
+  breed: varchar('breed', { length: 100 }),
+  birthMonth: integer('birth_month'),
+  birthYear: integer('birth_year'),
+  receiveUpdates: boolean('receive_updates').default(false).notNull(),
+  createdAt: createdAt(),
+  updatedAt: updatedAt(),
+}, (table) => ({
+  userIdx: index('pets_user_idx').on(table.userId),
+  validBirthMonth: check('pets_valid_birth_month', sql`${table.birthMonth} IS NULL OR (${table.birthMonth} BETWEEN 1 AND 12)`),
+  validBirthYear: check('pets_valid_birth_year', sql`${table.birthYear} IS NULL OR (${table.birthYear} BETWEEN 1900 AND 2100)`),
+  completeBirthDate: check('pets_complete_birth_date', sql`(${table.birthMonth} IS NULL AND ${table.birthYear} IS NULL) OR (${table.birthMonth} IS NOT NULL AND ${table.birthYear} IS NOT NULL)`),
 }));
 
 export const googleLoginChallenges = pgTable('google_login_challenges', {
