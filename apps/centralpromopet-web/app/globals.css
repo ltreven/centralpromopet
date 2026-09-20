@@ -308,7 +308,6 @@ h2 { font-size: 32px; line-height: 1.2; letter-spacing: -1px; margin-block: 10px
 .google-link { border-block: 1px solid var(--line); padding: 22px 0; margin: 22px 0; }
 .google-link h2 { font-size: 21px; margin-bottom: 12px; }
 .pets-page { padding-block: 45px 70px; }
-.daily-tips-page { max-width: 780px; }
 .daily-tips-flow, .daily-tips-confirmation { padding: clamp(28px, 6vw, 52px); }
 .daily-tips-flow h1, .daily-tips-confirmation h1 { font-size: clamp(30px, 5vw, 42px); letter-spacing: -1.2px; margin: 10px 0 14px; }
 .daily-tips-flow > p, .daily-tips-confirmation p { max-width: 620px; color: var(--muted); font-size: 16px; line-height: 1.65; }
