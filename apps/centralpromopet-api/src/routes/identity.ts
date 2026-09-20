@@ -3,7 +3,7 @@ import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 import { eq, sql } from 'drizzle-orm';
 import { db, users } from '@centralpromopet/database';
-import { AuthenticatedRequest, clearSessionCookie, createSessionToken, requireAuth, sessionCookie, publicUser } from '../auth';
+import { AuthenticatedRequest, clearSessionCookie, createSessionToken, requireAuth, requireCurrentPassword, sessionCookie, publicUser } from '../auth';
 
 import { createGoogleRouter } from './google';
 import { GoogleVerifier } from '../google';
@@ -13,6 +13,7 @@ const identityRouter = Router();
 const password = z.string().min(12).refine((value) => Buffer.byteLength(value, 'utf8') <= 72, 'Use no máximo 72 bytes para a senha.');
 const loginSchema = z.object({ email: z.string().trim().toLowerCase().email().max(255), password: z.string().min(1).max(256) });
 const changeSchema = z.object({ oldPassword: z.string().min(1).max(256), newPassword: password }).refine((input) => input.oldPassword !== input.newPassword, 'Escolha uma senha diferente da atual.');
+const preferencesSchema = z.object({ receiveNewsletter: z.boolean() });
 // Per-process protection. API is private behind the Web proxy; the shared limit
 // intentionally does not trust client-supplied forwarding headers.
 const attempts = new Map<string, { count: number; resetAt: number }>();
@@ -48,6 +49,15 @@ identityRouter.post('/logout', (_req, res) => {
   res.json({ success: true });
 });
 identityRouter.get('/me', requireAuth, (req, res) => res.json({ success: true, data: (req as AuthenticatedRequest).user }));
+identityRouter.patch('/preferences', requireAuth, requireCurrentPassword, async (req, res, next) => {
+  const parsed = preferencesSchema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ success: false, message: 'Preferências inválidas.' });
+  try {
+    const userId = (req as AuthenticatedRequest).user.id;
+    const [updated] = await db.update(users).set({ receiveNewsletter: parsed.data.receiveNewsletter, updatedAt: new Date() }).where(eq(users.id, userId)).returning();
+    res.json({ success: true, data: publicUser(updated) });
+  } catch (error) { next(error); }
+});
 identityRouter.post('/change-password', requireAuth, async (req, res, next) => {
   const parsed = changeSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ success: false, message: 'Use uma nova senha diferente, com pelo menos 12 caracteres e no máximo 72 bytes.' });

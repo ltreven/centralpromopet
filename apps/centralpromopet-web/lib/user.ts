@@ -1,7 +1,7 @@
 export type User = {
   id: string; email: string; role: 'admin' | 'user'; passwordExpired: boolean;
   displayName: string | null; avatarUrl: string | null;
-  hasPassword: boolean; googleLinked: boolean; googleEmail: string | null;
+  hasPassword: boolean; googleLinked: boolean; googleEmail: string | null; receiveNewsletter: boolean;
 };
 export function safeNext(value: string | undefined) {
   return value && value.startsWith('/') && !value.startsWith('//') ? value : undefined;

@@ -1,0 +1,1 @@
+ALTER TABLE "users" ADD COLUMN "receive_newsletter" boolean DEFAULT false NOT NULL;

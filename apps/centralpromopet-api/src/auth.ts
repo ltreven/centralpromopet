@@ -4,7 +4,7 @@ import { eq } from 'drizzle-orm';
 import { db, users } from '@centralpromopet/database';
 
 export type UserRole = 'admin' | 'user';
-export type AuthUser = { id: string; email: string; role: UserRole; passwordExpired: boolean; displayName?: string | null; avatarUrl?: string | null; hasPassword?: boolean; googleLinked?: boolean; googleEmail?: string | null; sessionVersion?: number };
+export type AuthUser = { id: string; email: string; role: UserRole; passwordExpired: boolean; displayName?: string | null; avatarUrl?: string | null; hasPassword?: boolean; googleLinked?: boolean; googleEmail?: string | null; receiveNewsletter?: boolean; sessionVersion?: number };
 export type AuthenticatedRequest = Request & { user: AuthUser };
 
 const cookieName = 'centralpromopet_session';
@@ -79,6 +79,6 @@ export function publicUser(user: typeof users.$inferSelect): AuthUser {
   return {
     id: user.id, email: user.email, role: user.role, passwordExpired: user.passwordExpired,
     displayName: user.displayName, avatarUrl: user.avatarUrl,
-    hasPassword: Boolean(user.passwordHash), googleLinked: Boolean(user.googleSubject), googleEmail: user.googleEmail,
+    hasPassword: Boolean(user.passwordHash), googleLinked: Boolean(user.googleSubject), googleEmail: user.googleEmail, receiveNewsletter: user.receiveNewsletter,
   };
 }

@@ -1,7 +1,7 @@
 import { Router, Request } from 'express';
 import { and, asc, eq } from 'drizzle-orm';
 import { z } from 'zod';
-import { db, pets } from '@centralpromopet/database';
+import { db, pets, users } from '@centralpromopet/database';
 import { AuthenticatedRequest, requireAuth, requireCurrentPassword } from '../auth';
 
 export const petsRouter = Router();
@@ -33,6 +33,7 @@ petsRouter.post('/', async (req, res, next) => {
   if (!parsed.success) return res.status(400).json({ success: false, message: parsed.error.issues[0]?.message || 'Confira os dados do pet.' });
   try {
     const [data] = await db.insert(pets).values({ ...parsed.data, userId: currentUserId(req) }).returning();
+    if (parsed.data.receiveUpdates) await db.update(users).set({ receiveNewsletter: true, updatedAt: new Date() }).where(eq(users.id, currentUserId(req)));
     res.status(201).json({ success: true, data });
   } catch (error) { next(error); }
 });
@@ -45,6 +46,7 @@ petsRouter.patch('/:id', async (req, res, next) => {
   try {
     const [data] = await db.update(pets).set({ ...parsed.data, updatedAt: new Date() }).where(and(eq(pets.id, id.data), eq(pets.userId, currentUserId(req)))).returning();
     if (!data) return res.status(404).json({ success: false, message: 'Pet não encontrado.' });
+    if (parsed.data.receiveUpdates) await db.update(users).set({ receiveNewsletter: true, updatedAt: new Date() }).where(eq(users.id, currentUserId(req)));
     res.json({ success: true, data });
   } catch (error) { next(error); }
 });

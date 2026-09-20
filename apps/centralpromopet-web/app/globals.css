@@ -308,6 +308,19 @@ h2 { font-size: 32px; line-height: 1.2; letter-spacing: -1px; margin-block: 10px
 .google-link { border-block: 1px solid var(--line); padding: 22px 0; margin: 22px 0; }
 .google-link h2 { font-size: 21px; margin-bottom: 12px; }
 .pets-page { padding-block: 45px 70px; }
+.daily-tips-page { max-width: 780px; }
+.daily-tips-flow, .daily-tips-confirmation { padding: clamp(28px, 6vw, 52px); }
+.daily-tips-flow h1, .daily-tips-confirmation h1 { font-size: clamp(30px, 5vw, 42px); letter-spacing: -1.2px; margin: 10px 0 14px; }
+.daily-tips-flow > p, .daily-tips-confirmation p { max-width: 620px; color: var(--muted); font-size: 16px; line-height: 1.65; }
+.daily-tips-confirmation { display: flex; align-items: flex-start; gap: 20px; border-color: #cfe4ca; background: #f5fbf2; }
+.daily-tips-confirmation > svg, .daily-tips-success-icon { color: var(--green); flex: 0 0 auto; }
+.daily-tips-confirmation .button { margin-top: 10px; }
+.daily-tips-choices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-top: 28px; }
+.daily-tips-choice { display: flex; align-items: center; justify-content: center; gap: 12px; min-height: 96px; border: 1px solid #cfe4ca; border-radius: 14px; background: #f5fbf2; color: var(--ink); font: inherit; font-size: 17px; font-weight: 750; cursor: pointer; }
+.daily-tips-choice:hover { border-color: var(--green); background: #edf7e9; }
+.daily-tips-form { display: grid; gap: 18px; max-width: 480px; margin-top: 28px; }
+.daily-tips-form label { display: grid; gap: 8px; color: var(--ink); font-size: 13px; font-weight: 700; }
+.daily-tips-form input, .daily-tips-form select { width: 100%; min-height: 46px; padding: 0 12px; border: 1px solid #d8dfd5; border-radius: 10px; background: white; color: var(--ink); }
 .pets-page-heading { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 28px; color: var(--green); }
 .pets-page-heading h1 { color: var(--ink); font-size: clamp(30px, 4vw, 42px); letter-spacing: -1.3px; margin: 10px 0; }
 .pets-page-heading p { color: var(--muted); margin: 0; font-size: 15px; }
@@ -348,6 +361,8 @@ h2 { font-size: 32px; line-height: 1.2; letter-spacing: -1px; margin-block: 10px
   .tips-section { padding-block: 0 40px; }
   .tips-heading h2 { font-size: 22px; }
   .pets-page { padding-block: 30px 45px; }
+  .daily-tips-confirmation { flex-direction: column; }
+  .daily-tips-choices { grid-template-columns: 1fr; }
   .pets-layout { grid-template-columns: 1fr; }
   .pets-page-heading { align-items: flex-start; }
   .pets-page-heading > svg { width: 32px; }

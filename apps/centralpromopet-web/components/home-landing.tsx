@@ -28,6 +28,7 @@ export function HomeLanding({ initialQuery, initialPet, shouldScrollToOffers }: 
   const [selectedPetId, setSelectedPetId] = useState<string | null>(null);
   const [featuredTip, setFeaturedTip] = useState<PetTip>(fallbackTip);
   const [productSearchOpen, setProductSearchOpen] = useState(Boolean(initialQuery));
+  const dailyTipsHref = user ? (user.passwordExpired ? '/change-password?next=%2Fdashboard%2Fpets%3FdailyTips%3D1' : '/dashboard/pets?dailyTips=1') : '/login?next=%2Fdashboard%2Fpets%3FdailyTips%3D1';
   const productSearchInput = useRef<HTMLInputElement>(null);
   useEffect(() => {
     if (productSearchOpen) productSearchInput.current?.focus();
@@ -101,7 +102,7 @@ export function HomeLanding({ initialQuery, initialPet, shouldScrollToOffers }: 
       </section>
       <section className="tips-section container" id="dicas">
         <div className="tips-heading"><div><span className="eyebrow">BEM-ESTAR PET</span><h2>Uma dica para cuidar ainda melhor</h2></div><Lightbulb size={34} aria-hidden="true" /></div>
-        <article className="featured-tip"><span className="tip-icon" aria-hidden="true"><Lightbulb size={22} /></span><div className="featured-tip-copy"><strong>{featuredTip.title}</strong><p>{featuredTip.content}</p></div><Link href={user ? (user.passwordExpired ? '/change-password?next=%2Fdashboard%2Fpets' : '/dashboard/pets') : '/login?next=%2Fdashboard%2Fpets'} className="button primary tip-cta">Receber uma dica por dia <ArrowUpRight size={17} /></Link></article>
+        <article className="featured-tip"><span className="tip-icon" aria-hidden="true"><Lightbulb size={22} /></span><div className="featured-tip-copy"><strong>{featuredTip.title}</strong><p>{featuredTip.content}</p></div><Link href={dailyTipsHref} className="button primary tip-cta">Receber uma dica por dia <ArrowUpRight size={17} /></Link></article>
       </section>
     </main>
     <footer className="container site-footer"><Brand /><span>Carinho pelo seu pet. Cuidado com seu bolso.</span><span>© {new Date().getFullYear()} Central Promo Pet</span></footer>

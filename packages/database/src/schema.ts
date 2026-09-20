@@ -22,6 +22,7 @@ export const users = pgTable('users', {
   sessionVersion: integer('session_version').default(0).notNull(),
   role: userRole('role').default('user').notNull(),
   status: userStatus('status').default('active').notNull(),
+  receiveNewsletter: boolean('receive_newsletter').default(false).notNull(),
   lastLoginAt: timestamp('last_login_at', { withTimezone: true }),
   createdAt: createdAt(),
   updatedAt: updatedAt(),
