@@ -26,6 +26,9 @@ export function SiteHeader() {
     document.addEventListener('pointerdown', closeOnOutsideClick);
     return () => document.removeEventListener('pointerdown', closeOnOutsideClick);
   }, []);
+  function closeAccountMenu() {
+    accountMenuRef.current?.removeAttribute('open');
+  }
   const firstName = user?.displayName?.trim().split(/\s+/)[0] || user?.email.split('@')[0];
   return <>
     <header className="site-header container"><Brand /><nav aria-label="Menu principal">
@@ -33,11 +36,13 @@ export function SiteHeader() {
         <summary><span className="avatar">{user.avatarUrl ? <Image src={user.avatarUrl} alt="" width={36} height={36} referrerPolicy="no-referrer" /> : firstName?.charAt(0).toUpperCase()}</span><span>Olá, {firstName}</span><span aria-hidden="true">⌄</span></summary>
         <div className="account-menu-panel">
           <span className="account-role">{user.role === 'admin' ? 'Administrador' : 'Minha conta'}</span>
-          {user.passwordExpired ? <Link href="/change-password">Trocar senha temporária</Link> : <>
-            <Link href="/dashboard/pets">Meu Pet</Link>
+          {user.passwordExpired ? <Link href="/change-password" onClick={closeAccountMenu}>Trocar senha temporária</Link> : <>
+            <Link href="/" onClick={closeAccountMenu}>Voltar para a home</Link>
+            <Link href="/dashboard/pets" onClick={closeAccountMenu}>Meu Pet</Link>
             {user.role === 'admin' && <>
-              <Link href="/dashboard/admin">Produtos e promoções</Link>
-              <Link href="/dashboard/admin/users">Usuários</Link>
+              <Link href="/dashboard/admin" onClick={closeAccountMenu}>Produtos e promoções</Link>
+              <Link href="/dashboard/admin/users" onClick={closeAccountMenu}>Usuários</Link>
+              <Link href="/dashboard/admin/tips" onClick={closeAccountMenu}>Dicas</Link>
             </>}
           </>}
           <Logout />

@@ -86,9 +86,16 @@ h2 { font-size: 32px; line-height: 1.2; letter-spacing: -1px; margin-block: 10px
 .admin-offer { background: white; border: 1px solid var(--line); border-radius: 14px; padding: 20px; display: grid; gap: 10px; }
 .admin-offer h3, .admin-offer p { margin: 0; }
 .admin-offer p, .admin-offer small { color: var(--muted); font-size: 13px; }
-.admin-user-edit { display: grid; gap: 12px; }
-.admin-user-edit label { display: grid; gap: 6px; color: var(--ink); font-size: 13px; font-weight: 700; }
-.admin-user-edit input, .admin-user-edit select { min-height: 42px; padding: 0 10px; border: 1px solid #d8dfd5; border-radius: 9px; background: white; color: var(--ink); }
+.tip-admin-form { display: grid; grid-template-columns: 1fr 220px; gap: 18px; }
+.tip-admin-form label { display: flex; flex-direction: column; gap: 8px; color: var(--ink); font-size: 13px; font-weight: 650; }
+.tip-admin-form input, .tip-admin-form select, .tip-admin-form textarea { width: 100%; border: 1px solid #cbd5ce; border-radius: 8px; padding: 10px 12px; background: white; color: var(--ink); }
+.tip-admin-form input, .tip-admin-form select { min-height: 44px; }
+.tip-admin-form textarea { resize: vertical; line-height: 1.5; }
+@media (max-width: 600px) {
+  .tip-admin-form { grid-template-columns: 1fr; gap: 15px; }
+}
+.toast { position: fixed; top: 22px; right: 22px; z-index: 60; max-width: min(420px, calc(100% - 44px)); padding: 14px 18px; border: 1px solid #b9d9be; border-radius: 11px; background: #eff9ef; color: var(--green-dark); box-shadow: 0 12px 34px #182b2320; font-size: 14px; font-weight: 700; animation: toast-in .2s ease-out; }
+@keyframes toast-in { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
 .status-pill, .pet-tags span { display: inline-flex; align-items: center; border-radius: 99px; padding: 5px 10px; background: #eef3e8; color: var(--green); font-size: 11px; font-weight: 700; margin-right: 7px; }
 .status-pill.draft { background: #fff3df; color: #875400; }
 .status-pill.verified { background: #e8f4ed; }
@@ -198,9 +205,18 @@ h2 { font-size: 32px; line-height: 1.2; letter-spacing: -1px; margin-block: 10px
 .community { padding: 30px 38px; }
 .community h2 { font-size: 25px; }
 .community p { max-width: 520px; }
-.pet-invite { display: flex; align-items: center; justify-content: space-between; gap: 30px; padding: 30px 38px; margin-bottom: 42px; border: 1px solid #dce8d9; border-radius: 18px; background: #edf5e9; }
+.pet-invite { display: flex; align-items: center; justify-content: space-between; gap: 30px; padding: 30px 38px; margin-top: 24px; margin-bottom: 42px; border: 1px solid #dce8d9; border-radius: 18px; background: #edf5e9; }
 .pet-invite h2 { font-size: 25px; margin-bottom: 10px; }
 .pet-invite p { max-width: 540px; margin: 0; color: var(--muted); line-height: 1.6; }
+.tips-section { padding-block: 8px 58px; }
+.tips-heading { display: flex; align-items: center; justify-content: space-between; gap: 20px; color: var(--green); margin-bottom: 20px; }
+.tips-heading h2 { color: var(--ink); font-size: 25px; margin-top: 8px; }
+.featured-tip { display: flex; align-items: center; gap: 16px; padding: 24px; border: 1px solid #f0d8b9; border-radius: 16px; background: #fff8ed; }
+.tip-icon { display: grid; place-items: center; flex: 0 0 44px; width: 44px; height: 44px; border-radius: 50%; background: #f5dfbf; color: var(--orange); }
+.featured-tip-copy { flex: 1; min-width: 0; }
+.featured-tip strong, .tip-card strong { display: block; color: var(--ink); font-size: 16px; line-height: 1.4; }
+.featured-tip p, .tip-card p { margin: 7px 0 0; color: var(--muted); font-size: 14px; line-height: 1.6; }
+.tip-cta { flex-shrink: 0; }
 @media (min-width: 601px) and (max-width: 900px) {
   .offers-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
@@ -295,6 +311,8 @@ h2 { font-size: 32px; line-height: 1.2; letter-spacing: -1px; margin-block: 10px
 .pets-page-heading h1 { color: var(--ink); font-size: clamp(30px, 4vw, 42px); letter-spacing: -1.3px; margin: 10px 0; }
 .pets-page-heading p { color: var(--muted); margin: 0; font-size: 15px; }
 .pets-layout { display: grid; grid-template-columns: minmax(260px, 370px) 1fr; gap: 24px; align-items: start; }
+.pets-layout-list-only { display: block; }
+.pets-layout-form-only { display: block; }
 .pet-form { display: grid; gap: 16px; }
 .pet-form h2 { font-size: 24px; margin: -3px 0 2px; }
 .pet-form label { display: grid; gap: 7px; font-size: 13px; font-weight: 700; color: var(--ink); }
@@ -322,8 +340,12 @@ h2 { font-size: 32px; line-height: 1.2; letter-spacing: -1px; margin-block: 10px
   .account-menu summary { max-width: 165px; font-size: 12px; gap: 6px; }
   .site-header:has(.account-menu) .brand { font-size: 16px; gap: 7px; }
   .site-header:has(.account-menu) .brand img { width: 40px; height: 40px; }
-  .pet-invite { flex-direction: column; align-items: flex-start; padding: 26px 24px; margin-bottom: 30px; }
+  .pet-invite { flex-direction: column; align-items: flex-start; padding: 26px 24px; margin-top: 18px; margin-bottom: 30px; }
   .pet-invite .button { width: 100%; }
+  .featured-tip { align-items: stretch; flex-direction: column; }
+  .featured-tip .tip-cta { width: 100%; }
+  .tips-section { padding-block: 0 40px; }
+  .tips-heading h2 { font-size: 22px; }
   .pets-page { padding-block: 30px 45px; }
   .pets-layout { grid-template-columns: 1fr; }
   .pets-page-heading { align-items: flex-start; }

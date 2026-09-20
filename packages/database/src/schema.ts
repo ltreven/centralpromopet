@@ -6,6 +6,7 @@ export const userStatus = pgEnum('user_status', ['active', 'inactive']);
 export const promotionStatus = pgEnum('promotion_status', ['draft', 'published']);
 export const promotionPetType = pgEnum('promotion_pet_type', ['dogs', 'cats', 'birds', 'other']);
 export const petType = pgEnum('pet_type', ['dogs', 'cats', 'birds', 'other']);
+export const tipCategory = pgEnum('tip_category', ['wellness', 'training']);
 const createdAt = () => timestamp('created_at', { withTimezone: true }).defaultNow().notNull();
 const updatedAt = () => timestamp('updated_at', { withTimezone: true }).defaultNow().notNull();
 
@@ -44,6 +45,17 @@ export const pets = pgTable('pets', {
   validBirthMonth: check('pets_valid_birth_month', sql`${table.birthMonth} IS NULL OR (${table.birthMonth} BETWEEN 1 AND 12)`),
   validBirthYear: check('pets_valid_birth_year', sql`${table.birthYear} IS NULL OR (${table.birthYear} BETWEEN 1900 AND 2100)`),
   completeBirthDate: check('pets_complete_birth_date', sql`(${table.birthMonth} IS NULL AND ${table.birthYear} IS NULL) OR (${table.birthMonth} IS NOT NULL AND ${table.birthYear} IS NOT NULL)`),
+}));
+
+export const tips = pgTable('tips', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  title: varchar('title', { length: 200 }).notNull(),
+  content: text('content').notNull(),
+  category: tipCategory('category').notNull(),
+  createdAt: createdAt(),
+  updatedAt: updatedAt(),
+}, (table) => ({
+  categoryIdx: index('tips_category_idx').on(table.category),
 }));
 
 export const googleLoginChallenges = pgTable('google_login_challenges', {

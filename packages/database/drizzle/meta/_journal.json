@@ -57,6 +57,20 @@
       "when": 1789851040124,
       "tag": "0007_nappy_human_cannonball",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1789917480687,
+      "tag": "0008_clever_newton_destine",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1789917965147,
+      "tag": "0009_awesome_terror",
+      "breakpoints": true
     }
   ]
 }

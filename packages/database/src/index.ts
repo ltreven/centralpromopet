@@ -10,3 +10,4 @@ export const client = postgres(process.env.DATABASE_URL || 'postgres://centralpr
 export const db = drizzle(client, { schema });
 export * from './schema';
 export * from './demo-promotions';
+export * from './demo-tips';

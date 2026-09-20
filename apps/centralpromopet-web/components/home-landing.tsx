@@ -3,7 +3,7 @@
 import { FormEvent, useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ArrowUpRight, Search, MessageCircle, X } from 'lucide-react';
+import { ArrowUpRight, Lightbulb, Search, MessageCircle, X } from 'lucide-react';
 import { SiteHeader } from '@/components/site-header';
 import { Promotions, PetFilter } from '@/components/promotions';
 import { Brand } from '@/components/brand';
@@ -17,12 +17,16 @@ const petFilters: { value: PetFilter; label: string; icon: string }[] = [
   { value: 'all', label: 'Tudo', icon: '✨' },
 ];
 
+type PetTip = { id: string; title: string; content: string; category: 'wellness' | 'training' };
+const fallbackTip: PetTip = { id: 'fallback', title: 'Você sabia que brincar também é cuidar?', content: 'Brincadeiras diárias ajudam a reduzir o estresse e mantêm cães e gatos ativos e felizes.', category: 'wellness' };
+
 export function HomeLanding({ initialQuery, initialPet, shouldScrollToOffers }: { initialQuery: string; initialPet: PetFilter; shouldScrollToOffers: boolean }) {
   const [query, setQuery] = useState(initialQuery);
   const [activePet, setActivePet] = useState<PetFilter>(initialPet);
   const [pets, setPets] = useState<Pet[]>([]);
   const [user, setUser] = useState<User | null>(null);
   const [selectedPetId, setSelectedPetId] = useState<string | null>(null);
+  const [featuredTip, setFeaturedTip] = useState<PetTip>(fallbackTip);
   const [productSearchOpen, setProductSearchOpen] = useState(Boolean(initialQuery));
   const productSearchInput = useRef<HTMLInputElement>(null);
   useEffect(() => {
@@ -40,6 +44,9 @@ export function HomeLanding({ initialQuery, initialPet, shouldScrollToOffers }: 
       if (initialPet === 'all' && data[0]) { setSelectedPetId(data[0].id); setActivePet(data[0].type); }
     }).catch(() => {});
   }, [initialPet]);
+  useEffect(() => {
+    fetch('/api/tips/random', { cache: 'no-store' }).then(async (response) => response.ok ? (await response.json()).data as PetTip : null).then((tip) => { if (tip) setFeaturedTip(tip); }).catch(() => {});
+  }, []);
 
   function submitSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -91,6 +98,10 @@ export function HomeLanding({ initialQuery, initialPet, shouldScrollToOffers }: 
       <section className="pet-invite container">
         <div><span className="eyebrow">DO JEITINHO DELE</span><h2>Quer receber novidades para o seu pet?</h2><p>Cadastre seu companheiro e escolha receber promoções e novidades pensadas para ele.</p></div>
         <Link href={user ? (user.passwordExpired ? '/change-password?next=%2Fdashboard%2Fpets' : '/dashboard/pets') : '/login?next=%2Fdashboard%2Fpets'} className="button primary">Cadastrar meu pet <ArrowUpRight size={17} /></Link>
+      </section>
+      <section className="tips-section container" id="dicas">
+        <div className="tips-heading"><div><span className="eyebrow">BEM-ESTAR PET</span><h2>Uma dica para cuidar ainda melhor</h2></div><Lightbulb size={34} aria-hidden="true" /></div>
+        <article className="featured-tip"><span className="tip-icon" aria-hidden="true"><Lightbulb size={22} /></span><div className="featured-tip-copy"><strong>{featuredTip.title}</strong><p>{featuredTip.content}</p></div><Link href={user ? (user.passwordExpired ? '/change-password?next=%2Fdashboard%2Fpets' : '/dashboard/pets') : '/login?next=%2Fdashboard%2Fpets'} className="button primary tip-cta">Receber uma dica por dia <ArrowUpRight size={17} /></Link></article>
       </section>
     </main>
     <footer className="container site-footer"><Brand /><span>Carinho pelo seu pet. Cuidado com seu bolso.</span><span>© {new Date().getFullYear()} Central Promo Pet</span></footer>

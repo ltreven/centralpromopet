@@ -1,4 +1,4 @@
-import { client, db, demoPromotions, promotions } from '@centralpromopet/database';
+import { client, db, demoPromotions, demoTips, promotions, tips } from '@centralpromopet/database';
 import { isNull, like, or } from 'drizzle-orm';
 
 async function seedStagingPromotions() {
@@ -26,7 +26,12 @@ async function seedStagingPromotions() {
       : await db.insert(promotions).values(values).onConflictDoNothing({ target: promotions.id }).returning({ id: promotions.id });
     synced += result.length;
   }
-  console.log(`Staging catalog ready: ${synced} seed rows inserted or image placeholders refreshed; custom images were preserved.`);
+  for (const tip of demoTips) {
+    await db.insert(tips).values(tip).onConflictDoUpdate({ target: tips.id, set: {
+      title: tip.title, content: tip.content, category: tip.category, updatedAt: new Date(now),
+    } });
+  }
+  console.log(`Staging catalog ready: ${synced} promotion seed rows and ${demoTips.length} tips synchronized.`);
 }
 
 seedStagingPromotions().catch((error) => {

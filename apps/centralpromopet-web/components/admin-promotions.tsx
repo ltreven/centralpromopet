@@ -37,6 +37,7 @@ export function AdminPromotions() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState<Promotion | null>(null);
+  const [creating, setCreating] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
@@ -44,10 +45,16 @@ export function AdminPromotions() {
   const firstFieldRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (!editing) return;
+    if (!editing && !creating) return;
     editPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     firstFieldRef.current?.focus({ preventScroll: true });
-  }, [editing]);
+  }, [editing, creating]);
+
+  useEffect(() => {
+    if (!notice) return;
+    const timer = window.setTimeout(() => setNotice(''), 3200);
+    return () => window.clearTimeout(timer);
+  }, [notice]);
 
   async function loadOffers() {
     setLoading(true);
@@ -97,6 +104,7 @@ export function AdminPromotions() {
       formElement.reset();
       setNotice(editing ? 'Promoção atualizada com sucesso.' : 'Promoção cadastrada com sucesso.');
       setEditing(null);
+      setCreating(false);
       await loadOffers();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Não foi possível salvar a promoção.');
@@ -119,7 +127,8 @@ export function AdminPromotions() {
   }
 
   return <div className="admin-promotions">
-    <section className="admin-panel" ref={editPanelRef}>
+    {notice && <div className="toast" role="status">{notice}</div>}
+    {(editing || creating) && <section className="admin-panel" ref={editPanelRef}>
       <span className="eyebrow">{editing ? 'EDITAR OFERTA' : 'NOVA OFERTA'}</span>
       <h2>{editing ? 'Editar produto ou promoção' : 'Cadastrar produto ou promoção'}</h2>
       <p>Informe os dados do produto e escolha para quais pets ele é indicado.</p>
@@ -143,13 +152,12 @@ export function AdminPromotions() {
         <label>Válida até<input name="endsAt" type="date" min={new Date().toLocaleDateString('en-CA')} defaultValue={endDateValue(editing || undefined)} required /></label>
         <label>Status<select name="status" defaultValue={editing?.status || 'draft'}><option value="draft">Rascunho</option><option value="published">Publicada</option></select></label>
         {error && <p className="form-error field-wide" role="alert">{error}</p>}
-        {notice && <p className="form-success field-wide" role="status">{notice}</p>}
-        <div className="field-wide form-actions"><button className="button primary" type="submit" disabled={saving}>{saving ? 'Salvando…' : editing ? 'Salvar alterações' : 'Cadastrar promoção'}</button>{editing && <button className="button secondary" type="button" onClick={() => { setEditing(null); setError(''); setNotice(''); }}>Cancelar edição</button>}</div>
+        <div className="field-wide form-actions"><button className="button primary" type="submit" disabled={saving}>{saving ? 'Salvando…' : editing ? 'Salvar alterações' : 'Cadastrar promoção'}</button><button className="button secondary" type="button" onClick={() => { setEditing(null); setCreating(false); setError(''); }}>Cancelar</button></div>
       </form>
-    </section>
+    </section>}
 
-    <section className="admin-list">
-      <div className="section-heading"><div><span className="eyebrow">CATÁLOGO</span><h2>Produtos e promoções</h2></div></div>
+    {!(editing || creating) && <section className="admin-list">
+      <div className="section-heading"><div><span className="eyebrow">CATÁLOGO</span><h2>Produtos e promoções</h2></div><button className="button primary" type="button" onClick={() => { setCreating(true); setEditing(null); setError(''); }}>Nova promoção</button></div>
       {loading ? <p role="status">Carregando promoções…</p> : offers.length === 0 ? <p className="empty-state">Nenhuma promoção cadastrada.</p> : <div className="admin-offer-list">
         {offers.map((offer) => <article className="admin-offer" key={offer.id}>
           <div><span className={`status-pill ${offer.status}`}>{offer.status === 'published' ? 'Publicada' : 'Rascunho'}</span>{offer.storeVerified && <span className="status-pill verified">Loja verificada</span>}</div>
@@ -161,6 +169,6 @@ export function AdminPromotions() {
           <div className="admin-offer-actions"><button className="button secondary" type="button" onClick={() => { setEditing(offer); setError(''); setNotice(''); }}>Editar</button><button className="button danger" type="button" disabled={deleting === offer.id} onClick={() => deletePromotion(offer)}>{deleting === offer.id ? 'Excluindo…' : 'Excluir'}</button></div>
         </article>)}
       </div>}
-    </section>
+    </section>}
   </div>;
 }
