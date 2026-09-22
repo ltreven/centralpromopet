@@ -9,6 +9,7 @@ import { buildGraph, loadContext, searchOffers } from '../ai/graph';
 import { checkpointer, consumeQuota, withUserLock, ownedThread, eraseThread, eraseAll, eraseConversationContext } from '../ai/storage';
 import { actionLabel, decideAction } from '../ai/actions';
 import { actionSchema } from '../ai/contracts';
+import { logActivity } from '../activity';
 
 export function createChatRouter(modelOverride?: ModelCall) {
   const router = Router();
@@ -72,6 +73,7 @@ export function createChatRouter(modelOverride?: ModelCall) {
         const pending = await db.select({ id: aiActions.id, label: aiActions.label }).from(aiActions).where(and(eq(aiActions.userId, uid(req)), eq(aiActions.threadId, thread.id), eq(aiActions.status, 'pending'), gt(aiActions.createdAt, new Date(Date.now() - 86400000))));
         return { threadId: thread.id, answer: output.response.answer, actions: pending, remembered, offers: output.offers.filter((offer) => output.response.promotionIds.includes(offer.id)) };
       });
+      void logActivity({ userId: uid(req), event: 'chat.message', entityType: 'chat_thread', entityId: result.threadId, details: { actions: result.actions.length, remembered: result.remembered.length } });
       res.json({ data: result });
     } catch (e) { next(e); }
   });
@@ -79,7 +81,9 @@ export function createChatRouter(modelOverride?: ModelCall) {
     try {
       const id = z.string().uuid().parse(req.params.id);
       const { approved } = z.object({ approved: z.boolean() }).strict().parse(req.body);
-      res.json({ data: await withUserLock(uid(req), () => decideAction(uid(req), id, approved)) });
+      const data = await withUserLock(uid(req), () => decideAction(uid(req), id, approved));
+      void logActivity({ userId: uid(req), event: approved ? 'chat.action.approve' : 'chat.action.reject', entityType: 'ai_action', entityId: id, details: { kind: data.actionKind } });
+      res.json({ data });
     } catch (e) { next(e); }
   });
   router.get('/memory', async (req, res, next) => {
