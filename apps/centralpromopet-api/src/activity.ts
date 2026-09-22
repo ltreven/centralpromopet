@@ -17,7 +17,5 @@ export async function logActivity({ userId, event, entityType, entityId, details
       entityId: entityId || null,
       details,
     });
-  } catch (error) {
-    console.error('Activity log failed:', error instanceof Error ? error.message : 'Unknown error');
-  }
+  } catch (error) { console.error('Activity log failed:', error instanceof Error ? error.message : 'Unknown error'); }
 }

@@ -60,7 +60,7 @@ adminUsersRouter.post('/', requireAuth, requireCurrentPassword, requireAdmin, as
       createdAt: users.createdAt,
     });
     if (!created) return res.status(409).json({ success: false, message: 'Já existe um usuário com esse e-mail.' });
-    void logActivity({ userId: (req as AuthenticatedRequest).user.id, event: 'admin.user.create', entityType: 'user', entityId: created.id, details: { role: created.role } });
+    await logActivity({ userId: (req as AuthenticatedRequest).user.id, event: 'admin.user.create', entityType: 'user', entityId: created.id, details: { role: created.role } });
     res.status(201).json({ success: true, data: created });
   } catch (error) { next(error); }
 });
@@ -76,7 +76,7 @@ adminUsersRouter.patch('/:id', requireAuth, requireCurrentPassword, requireAdmin
       passwordExpired: users.passwordExpired, createdAt: users.createdAt,
     });
     if (!updated) return res.status(404).json({ success: false, message: 'Usuário não encontrado.' });
-    void logActivity({ userId: (req as AuthenticatedRequest).user.id, event: 'admin.user.update', entityType: 'user', entityId: updated.id, details: { role: updated.role, status: updated.status } });
+    await logActivity({ userId: (req as AuthenticatedRequest).user.id, event: 'admin.user.update', entityType: 'user', entityId: updated.id, details: { role: updated.role, status: updated.status } });
     res.json({ success: true, data: updated });
   } catch (error: unknown) {
     if (error && typeof error === 'object' && 'code' in error && error.code === '23505') return res.status(409).json({ success: false, message: 'Já existe um usuário com esse e-mail.' });

@@ -72,7 +72,7 @@ promotionsRouter.post('/', requireAuth, requireCurrentPassword, requireAdmin, as
       endsAt: new Date(value.endsAt),
       status: value.status,
     }).returning();
-    void logActivity({ userId: (req as AuthenticatedRequest).user.id, event: 'admin.promotion.create', entityType: 'promotion', entityId: data.id, details: { status: data.status } });
+    await logActivity({ userId: (req as AuthenticatedRequest).user.id, event: 'admin.promotion.create', entityType: 'promotion', entityId: data.id, details: { status: data.status } });
     res.status(201).json({ success: true, data });
   } catch (error) { next(error); }
 });
@@ -100,7 +100,7 @@ promotionsRouter.patch('/:id', requireAuth, requireCurrentPassword, requireAdmin
       updatedAt: new Date(),
     }).where(eq(promotions.id, id.data)).returning();
     if (!data) return res.status(404).json({ success: false, message: 'Promoção não encontrada.' });
-    void logActivity({ userId: (req as AuthenticatedRequest).user.id, event: 'admin.promotion.update', entityType: 'promotion', entityId: data.id, details: { status: data.status } });
+    await logActivity({ userId: (req as AuthenticatedRequest).user.id, event: 'admin.promotion.update', entityType: 'promotion', entityId: data.id, details: { status: data.status } });
     res.json({ success: true, data });
   } catch (error) { next(error); }
 });
@@ -111,7 +111,7 @@ promotionsRouter.delete('/:id', requireAuth, requireCurrentPassword, requireAdmi
     if (!id.success) return res.status(400).json({ success: false, message: 'Identificador de promoção inválido.' });
     const [data] = await db.delete(promotions).where(eq(promotions.id, id.data)).returning({ id: promotions.id });
     if (!data) return res.status(404).json({ success: false, message: 'Promoção não encontrada.' });
-    void logActivity({ userId: (req as AuthenticatedRequest).user.id, event: 'admin.promotion.delete', entityType: 'promotion', entityId: data.id });
+    await logActivity({ userId: (req as AuthenticatedRequest).user.id, event: 'admin.promotion.delete', entityType: 'promotion', entityId: data.id });
     res.json({ success: true, data });
   } catch (error) { next(error); }
 });

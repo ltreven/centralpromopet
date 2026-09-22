@@ -35,7 +35,7 @@ petsRouter.post('/', async (req, res, next) => {
   try {
     const [data] = await db.insert(pets).values({ ...parsed.data, userId: currentUserId(req) }).returning();
     if (parsed.data.receiveUpdates) await db.update(users).set({ receiveNewsletter: true, updatedAt: new Date() }).where(eq(users.id, currentUserId(req)));
-    void logActivity({ userId: currentUserId(req), event: 'pet.create', entityType: 'pet', entityId: data.id, details: { type: data.type } });
+    await logActivity({ userId: currentUserId(req), event: 'pet.create', entityType: 'pet', entityId: data.id, details: { type: data.type } });
     res.status(201).json({ success: true, data });
   } catch (error) { next(error); }
 });
@@ -49,7 +49,7 @@ petsRouter.patch('/:id', async (req, res, next) => {
     const [data] = await db.update(pets).set({ ...parsed.data, updatedAt: new Date() }).where(and(eq(pets.id, id.data), eq(pets.userId, currentUserId(req)))).returning();
     if (!data) return res.status(404).json({ success: false, message: 'Pet não encontrado.' });
     if (parsed.data.receiveUpdates) await db.update(users).set({ receiveNewsletter: true, updatedAt: new Date() }).where(eq(users.id, currentUserId(req)));
-    void logActivity({ userId: currentUserId(req), event: 'pet.update', entityType: 'pet', entityId: data.id, details: { type: data.type } });
+    await logActivity({ userId: currentUserId(req), event: 'pet.update', entityType: 'pet', entityId: data.id, details: { type: data.type } });
     res.json({ success: true, data });
   } catch (error) { next(error); }
 });
@@ -60,7 +60,7 @@ petsRouter.delete('/:id', async (req, res, next) => {
   try {
     const [data] = await db.delete(pets).where(and(eq(pets.id, id.data), eq(pets.userId, currentUserId(req)))).returning({ id: pets.id });
     if (!data) return res.status(404).json({ success: false, message: 'Pet não encontrado.' });
-    void logActivity({ userId: currentUserId(req), event: 'pet.delete', entityType: 'pet', entityId: data.id });
+    await logActivity({ userId: currentUserId(req), event: 'pet.delete', entityType: 'pet', entityId: data.id });
     res.json({ success: true, data });
   } catch (error) { next(error); }
 });

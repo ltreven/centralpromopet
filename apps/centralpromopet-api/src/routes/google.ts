@@ -116,7 +116,7 @@ export function createGoogleRouter(verifier: GoogleVerifier = verifyGoogleCreden
           }).where(eq(users.id, existing.id)).returning();
           return signedIn;
         });
-        void logActivity({
+        await logActivity({
           userId: user.id,
           event: purpose === 'link' ? 'user.google.link' : 'user.login',
           entityType: 'user',
