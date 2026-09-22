@@ -12,6 +12,11 @@ api:
     pullPolicy: Never
   port: 4000
   existingSecret: ""
+  # Optional runtime identity/secret configuration; no credentials in values files.
+  serviceAccountName: ""
+  extraEnv: []
+  extraVolumes: []
+  extraVolumeMounts: []
   resources:
     requests:
       cpu: 50m

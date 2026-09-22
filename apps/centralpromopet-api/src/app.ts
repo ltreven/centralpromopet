@@ -7,11 +7,16 @@ import { promotionsRouter } from './routes/promotions';
 import { adminUsersRouter } from './routes/adminUsers';
 import { petsRouter } from './routes/pets';
 import { tipsRouter } from './routes/tips';
+import { aiSettingsRouter } from './routes/aiSettings';
+import { createChatRouter } from './routes/chat';
+import { AiError } from './ai/config';
+import type { ModelCall } from './ai/provider';
+import { ZodError } from 'zod';
 import { requireAuth, requireAdmin, requireCurrentPassword, validateJwtSecret } from './auth';
 
 import { GoogleVerifier } from './google';
 
-export function createApp(options: { googleVerifier?: GoogleVerifier } = {}) {
+export function createApp(options: { googleVerifier?: GoogleVerifier; aiModel?: ModelCall } = {}) {
 validateJwtSecret();
 const app = express();
 app.disable('x-powered-by');
@@ -40,6 +45,8 @@ app.get('/ready', async (_req, res) => {
 app.use('/api/promotions', promotionsRouter);
 app.use('/api/pets', petsRouter);
 app.use('/api/tips', tipsRouter);
+app.use('/api/admin/ai-settings', aiSettingsRouter);
+app.use('/api/chat', createChatRouter(options.aiModel));
 app.use('/api/admin/users', adminUsersRouter);
 app.use('/api/identity', createIdentityRouter(options.googleVerifier));
 app.use('/api', requireAuth, requireCurrentPassword);
@@ -47,6 +54,8 @@ app.get('/api/account', (req, res) => res.json({ success: true, data: { message:
 app.get('/api/admin/status', requireAdmin, (_req, res) => res.json({ success: true, data: { message: 'Administração pronta para a próxima etapa.' } }));
 app.use((_req, res) => res.status(404).json({ success: false, message: 'Recurso não encontrado.' }));
 const errorHandler: ErrorRequestHandler = (error, _req, res, _next) => {
+  if (error instanceof AiError) return res.status(error.status).json({ success: false, message: error.message });
+  if (error instanceof ZodError) return res.status(400).json({ success: false, message: 'Confira os campos enviados. Alguns valores não são válidos.' });
   if (error instanceof SyntaxError && 'body' in error) return res.status(400).json({ success: false, message: 'JSON inválido.' });
   console.error('Request failed:', error instanceof Error ? error.message : 'Unknown error');
   res.status(500).json({ success: false, message: 'Não foi possível concluir a solicitação.' });

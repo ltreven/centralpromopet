@@ -29,6 +29,8 @@ export function PetsManager({ dailyTipsFlow = false }: { dailyTipsFlow?: boolean
   const [status, setStatus] = useState<'loading' | 'ready' | 'saving'>('loading');
   const [message, setMessage] = useState('');
   const [notice, setNotice] = useState('');
+  const [pendingRemoval, setPendingRemoval] = useState<Pet | null>(null);
+  const [removing, setRemoving] = useState(false);
   const [dailyTipsSubscribed, setDailyTipsSubscribed] = useState(!dailyTipsFlow);
   const [flowStep, setFlowStep] = useState<'choose-type' | 'choose-name' | 'birth' | 'complete'>('choose-type');
   const [flowType, setFlowType] = useState<'dogs' | 'cats' | null>(null);
@@ -109,12 +111,21 @@ export function PetsManager({ dailyTipsFlow = false }: { dailyTipsFlow?: boolean
   }
 
   async function removePet(pet: Pet) {
-    if (!window.confirm(`Remover ${pet.name} da sua lista?`)) return;
-    const response = await fetch(`/api/pets/${pet.id}`, { method: 'DELETE' });
-    if (!response.ok) { setMessage('Não foi possível remover o pet.'); return; }
-    setPets((current) => current.filter((item) => item.id !== pet.id));
-    if (editingId === pet.id) resetForm();
-    setNotice('Pet removido com sucesso.');
+    if (removing) return;
+    setRemoving(true); setMessage('');
+    try {
+      const response = await fetch(`/api/pets/${pet.id}`, { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) });
+      if (!response.ok) {
+        const result = await response.json().catch(() => null);
+        throw new Error(result?.message || 'Não foi possível remover o pet. Tente novamente.');
+      }
+      setPets((current) => current.filter((item) => item.id !== pet.id));
+      if (editingId === pet.id) resetForm();
+      setPendingRemoval(null);
+      setNotice('Pet removido com sucesso.');
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Não foi possível remover o pet. Verifique sua conexão e tente novamente.');
+    } finally { setRemoving(false); }
   }
 
   if (status === 'loading') return <section className="pets-page"><div className="empty-state" role="status">Preparando suas dicas e novidades…</div></section>;
@@ -134,7 +145,7 @@ export function PetsManager({ dailyTipsFlow = false }: { dailyTipsFlow?: boolean
 
   return <section className="pets-page">
     {notice && <div className="toast" role="status">{notice}</div>}
-    <div className="pets-page-heading"><div><span className="eyebrow">MINHA CONTA</span><h1>Meu Pet</h1><p>Cadastre seus companheiros para personalizar os garimpos da Central.</p></div><button className="button primary" type="button" onClick={() => { resetForm(); setCreating(true); }}>Novo pet</button></div>
+    <div className="pets-page-heading"><div><span className="eyebrow">MINHA CONTA</span><h1>Meu Pet</h1><p>Cadastre seus companheiros para personalizar os garimpos da Central.</p></div><button className="button primary" type="button" disabled={removing} onClick={() => { resetForm(); setPendingRemoval(null); setCreating(true); }}>Novo pet</button></div>
     <div className={creating ? 'pets-layout pets-layout-form-only' : 'pets-layout pets-layout-list-only'}>
       {creating && <form className="admin-panel pet-form" onSubmit={submit}>
         <span className="eyebrow">{editingId ? 'EDITAR PET' : 'NOVO PET'}</span><h2>{editingId ? 'Atualize os dados' : 'Quem mora no seu coração?'}</h2>
@@ -146,7 +157,15 @@ export function PetsManager({ dailyTipsFlow = false }: { dailyTipsFlow?: boolean
         {message && <p className="form-error" role="alert">{message}</p>}
         <div className="form-actions"><button className="button primary" disabled={status === 'saving'} type="submit">{editingId ? <Pencil size={17} /> : <Plus size={17} />}{status === 'saving' ? 'Salvando…' : editingId ? 'Salvar alterações' : 'Cadastrar pet'}</button>{editingId && <button className="button secondary" type="button" onClick={resetForm}><X size={17} /> Cancelar</button>}</div>
       </form>}
-      {!creating && <PetsList pets={pets} onEdit={editPet} onRemove={removePet} />}
+      {!creating && <>
+        {pendingRemoval && <section className="admin-panel pet-removal-confirmation" aria-labelledby="pet-removal-title" aria-busy={removing}>
+          <h2 id="pet-removal-title">Remover {pendingRemoval.name}?</h2>
+          <p>O cadastro deste pet será excluído. Esta ação não pode ser desfeita.</p>
+          <div className="form-actions"><button className="button secondary" type="button" disabled={removing} onClick={() => { setPendingRemoval(null); setMessage(''); }}>Cancelar</button><button className="button danger danger-solid" type="button" disabled={removing} onClick={() => void removePet(pendingRemoval)}><Trash2 size={17} aria-hidden="true" />{removing ? 'Removendo…' : 'Confirmar exclusão'}</button></div>
+        </section>}
+        {message && <p className="form-error" role="alert">{message}</p>}
+        <PetsList pets={pets} onEdit={(pet) => { if (!removing) { setPendingRemoval(null); editPet(pet); } }} onRemove={(pet) => { if (!removing) { setPendingRemoval(pet); setMessage(''); } }} />
+      </>}
     </div>
   </section>;
 }

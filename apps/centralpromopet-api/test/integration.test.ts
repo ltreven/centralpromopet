@@ -185,7 +185,8 @@ test('real database: first login, authorization, revocation and active promotion
       const response = await request('/api/promotions/today', undefined, '');
       assert.equal(response.status, 200);
       const body = await response.json();
-      const matches = body.data.filter((offer: { id: string }) => offerIds.includes(offer.id));
+      const caseIds = rows.map((offer) => offer.id);
+      const matches = body.data.filter((offer: { id: string }) => caseIds.includes(offer.id));
       assert.deepEqual(matches.map((offer: { id: string }) => offer.id), [rows[0].id]);
       assert.equal(body.meta.timeZone, 'America/Sao_Paulo'); assert.equal(matches[0].priceCents, 1990);
     });

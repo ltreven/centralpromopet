@@ -9,10 +9,13 @@
     "start": "node dist/server.js",
     "test": "tsx --test test/auth.test.ts",
     "bootstrap:admin": "tsx src/scripts/bootstrapAdmin.ts",
-    "test:integration": "tsx --test test/integration.test.ts"
+    "test:integration": "tsx --test --test-concurrency=1 test/integration.test.ts test/ai.integration.test.ts"
   },
   "dependencies": {
     "@centralpromopet/database": "*",
+    "@langchain/core": "^1.2.12",
+    "@langchain/langgraph": "^1.4.16",
+    "@langchain/langgraph-checkpoint-postgres": "^1.0.5",
     "bcryptjs": "^3.0.3",
     "express": "^4.19.2",
     "google-auth-library": "^11.1.0",

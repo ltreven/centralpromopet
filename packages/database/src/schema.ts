@@ -1,4 +1,4 @@
-import { boolean, integer, pgEnum, pgTable, timestamp, uuid, varchar, text, index, check } from 'drizzle-orm/pg-core';
+import { boolean, integer, pgEnum, pgTable, timestamp, uuid, varchar, text, index, check, jsonb } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 
 export const userRole = pgEnum('user_role', ['admin', 'user']);
@@ -65,6 +65,58 @@ export const googleLoginChallenges = pgTable('google_login_challenges', {
   userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }),
   expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
 }, (table) => ({ expiryIdx: index('google_login_challenges_expiry_idx').on(table.expiresAt) }));
+
+export const aiSettings = pgTable('ai_settings', {
+  id: integer('id').primaryKey().default(1),
+  config: jsonb('config').$type<Record<string, unknown>>().notNull(),
+  updatedBy: uuid('updated_by').references(() => users.id, { onDelete: 'set null' }),
+  updatedAt: updatedAt(),
+});
+export const aiAudit = pgTable('ai_audit', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }),
+  event: varchar('event', { length: 80 }).notNull(),
+  details: jsonb('details').$type<Record<string, unknown>>().notNull(),
+  createdAt: createdAt(),
+});
+export const chatThreads = pgTable('chat_threads', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  title: varchar('title', { length: 100 }).notNull().default('Nova conversa'),
+  summary: text('summary').notNull().default(''),
+  createdAt: createdAt(), updatedAt: updatedAt(),
+}, (t) => ({ userIdx: index('chat_threads_user_idx').on(t.userId, t.updatedAt) }));
+export const chatMessages = pgTable('chat_messages', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  threadId: uuid('thread_id').notNull().references(() => chatThreads.id, { onDelete: 'cascade' }),
+  role: varchar('role', { length: 20 }).notNull(),
+  content: text('content').notNull(),
+  promotionIds: jsonb('promotion_ids').$type<string[]>().notNull().default([]),
+  createdAt: createdAt(),
+}, (t) => ({ threadIdx: index('chat_messages_thread_idx').on(t.threadId, t.createdAt) }));
+export const aiMemories = pgTable('ai_memories', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  petId: uuid('pet_id').notNull().references(() => pets.id, { onDelete: 'cascade' }),
+  content: varchar('content', { length: 600 }).notNull(),
+  sourceQuote: varchar('source_quote', { length: 600 }).notNull(),
+  category: varchar('category', { length: 30 }).notNull(),
+  createdAt: createdAt(),
+}, (t) => ({ userIdx: index('ai_memories_user_idx').on(t.userId, t.petId) }));
+export const aiActions = pgTable('ai_actions', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  threadId: uuid('thread_id').notNull().references(() => chatThreads.id, { onDelete: 'cascade' }),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  payload: jsonb('payload').$type<Record<string, unknown>>().notNull(),
+  label: text('label').notNull(),
+  status: varchar('status', { length: 20 }).notNull().default('pending'),
+  createdAt: createdAt(),
+});
+export const aiUsage = pgTable('ai_usage', {
+  id: varchar('id', { length: 80 }).primaryKey(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  requests: integer('requests').notNull().default(0),
+});
 
 export const promotions = pgTable('promotions', {
   id: uuid('id').defaultRandom().primaryKey(),

@@ -14,6 +14,13 @@ spec:
       labels:
         app.kubernetes.io/name: centralpromopet-api
     spec:
+      {{- with .Values.api.serviceAccountName }}
+      serviceAccountName: {{ . | quote }}
+      {{- end }}
+      {{- with .Values.api.extraVolumes }}
+      volumes:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
@@ -36,7 +43,14 @@ spec:
           ports:
             - name: http
               containerPort: {{ .Values.api.port }}
+          {{- with .Values.api.extraVolumeMounts }}
+          volumeMounts:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           env:
+            {{- with .Values.api.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
             - name: GOOGLE_CLIENT_ID
               value: {{ .Values.api.googleClientId | quote }}
             - name: GOOGLE_ONE_TAP_ENABLED
