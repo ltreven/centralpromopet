@@ -7,7 +7,7 @@ import { AiError, getConfig } from '../ai/config';
 import { createModel, ModelCall } from '../ai/provider';
 import { buildGraph, loadContext, searchOffers } from '../ai/graph';
 import { checkpointer, consumeQuota, withUserLock, ownedThread, eraseThread, eraseAll, eraseConversationContext } from '../ai/storage';
-import { actionLabel, decideAction } from '../ai/actions';
+import { actionLabel, actionCompletion, decideAction } from '../ai/actions';
 import { actionSchema } from '../ai/contracts';
 import { logActivity } from '../activity';
 
@@ -16,6 +16,8 @@ export function createChatRouter(modelOverride?: ModelCall) {
   router.use(requireAuth, requireCurrentPassword);
   router.use((_req, res, next) => { res.setHeader('Cache-Control', 'no-store'); next(); });
   const uid = (req: unknown) => (req as AuthenticatedRequest).user.id;
+  const isConfirmation = (message: string) => /^(sim|pode|pode sim|pode criar|confirmo|confirmar|claro|isso|faça|faca|vamos|ok|okay|yes)(?:[!. ,]+(?:sim|por favor|pode|criar|isso))?[!. ,]*$/i.test(message.trim());
+  const isRejection = (message: string) => /^(não|nao|cancela|cancelar|deixa|deixa pra lá|deixa pra la)[!. ,]*$/i.test(message.trim());
   router.get('/threads', async (req, res, next) => {
     try { res.json({ data: await db.select().from(chatThreads).where(eq(chatThreads.userId, uid(req))).orderBy(desc(chatThreads.updatedAt)).limit(100) }); } catch (e) { next(e); }
   });
@@ -39,6 +41,16 @@ export function createChatRouter(modelOverride?: ModelCall) {
         if (threadId) await ownedThread(uid(req), threadId);
         await consumeQuota(uid(req), config.dailyMessageLimit);
         const thread = threadId ? await ownedThread(uid(req), threadId) : (await db.insert(chatThreads).values({ userId: uid(req), title: message.slice(0, 100) }).returning())[0];
+        const pending = await db.select().from(aiActions).where(and(eq(aiActions.userId, uid(req)), eq(aiActions.threadId, thread.id), eq(aiActions.status, 'pending'), gt(aiActions.createdAt, new Date(Date.now() - 86400000))));
+        if (pending.length === 1 && (isConfirmation(message) || isRejection(message))) {
+          const proposal = actionSchema.parse(pending[0].payload);
+          const approved = isConfirmation(message);
+          await db.insert(chatMessages).values({ threadId: thread.id, role: 'user', content: message });
+          const decision = await decideAction(uid(req), pending[0].id, approved);
+          if (decision.changed) await logActivity({ userId: uid(req), event: approved ? 'chat.action.approve' : 'chat.action.reject', entityType: 'ai_action', entityId: pending[0].id, details: { kind: decision.actionKind, source: 'conversation' } });
+          const followUpActions = await db.select({ id: aiActions.id, label: aiActions.label }).from(aiActions).where(and(eq(aiActions.userId, uid(req)), eq(aiActions.threadId, thread.id), eq(aiActions.status, 'pending'), gt(aiActions.createdAt, new Date(Date.now() - 86400000))));
+          return { threadId: thread.id, answer: decision.message || actionCompletion(proposal, pending[0].label, approved), actions: followUpActions, remembered: [], offers: [] };
+        }
         const graph = buildGraph({ model: modelOverride || createModel(config), context: () => loadContext(uid(req), thread.id, message), search: (query) => searchOffers(config, query), saver: checkpointer() });
         const output = await graph.invoke({ message, response: { answer: '', summary: '', promotionIds: [] } }, { configurable: { thread_id: thread.id }, recursionLimit: 8 });
         const remembered: string[] = [];
@@ -70,8 +82,8 @@ export function createChatRouter(modelOverride?: ModelCall) {
           ]);
           await tx.update(chatThreads).set({ summary: output.response.summary, updatedAt: new Date(now + 1) }).where(eq(chatThreads.id, thread.id));
         });
-        const pending = await db.select({ id: aiActions.id, label: aiActions.label }).from(aiActions).where(and(eq(aiActions.userId, uid(req)), eq(aiActions.threadId, thread.id), eq(aiActions.status, 'pending'), gt(aiActions.createdAt, new Date(Date.now() - 86400000))));
-        return { threadId: thread.id, answer: output.response.answer, actions: pending, remembered, offers: output.offers.filter((offer) => output.response.promotionIds.includes(offer.id)) };
+        const pendingActions = await db.select({ id: aiActions.id, label: aiActions.label }).from(aiActions).where(and(eq(aiActions.userId, uid(req)), eq(aiActions.threadId, thread.id), eq(aiActions.status, 'pending'), gt(aiActions.createdAt, new Date(Date.now() - 86400000))));
+        return { threadId: thread.id, answer: output.response.answer, actions: pendingActions, remembered, offers: output.offers.filter((offer) => output.response.promotionIds.includes(offer.id)) };
       });
       await logActivity({ userId: uid(req), event: 'chat.message', entityType: 'chat_thread', entityId: result.threadId, details: { actions: result.actions.length, remembered: result.remembered.length } });
       res.json({ data: result });
