@@ -6,13 +6,13 @@ api:
   appOrigins: "https://centralpromopet-stg.sabialabs.de"
   image:
     repository: ghcr.io/ltreven/centralpromopet-api
-    tag: 0d740cb079d89f1fb3f7160cd3724326915f1f22
+    tag: 273eb2aa94705f001522c7ada054d6f7cb2815ff
     pullPolicy: Always
   existingSecret: centralpromopet-api-secret
 web:
   image:
     repository: ghcr.io/ltreven/centralpromopet-web
-    tag: 0d740cb079d89f1fb3f7160cd3724326915f1f22
+    tag: 273eb2aa94705f001522c7ada054d6f7cb2815ff
     pullPolicy: Always
 postgres:
   auth:
