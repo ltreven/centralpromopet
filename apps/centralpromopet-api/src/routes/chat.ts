@@ -5,7 +5,7 @@ import { db, aiMemories, aiActions, chatThreads, chatMessages, pets, promotions 
 import { AuthenticatedRequest, requireAuth, requireCurrentPassword } from '../auth';
 import { AiError, getConfig } from '../ai/config';
 import { createModel, ModelCall } from '../ai/provider';
-import { buildGraph, loadContext, searchOffers } from '../ai/graph';
+import { buildGraph, loadContext, searchOffers, timedAiStage } from '../ai/graph';
 import { checkpointer, consumeQuota, withUserLock, ownedThread, eraseThread, eraseAll, eraseConversationContext } from '../ai/storage';
 import { actionLabel, actionCompletion, decideAction } from '../ai/actions';
 import { actionSchema } from '../ai/contracts';
@@ -52,7 +52,7 @@ export function createChatRouter(modelOverride?: ModelCall) {
           return { threadId: thread.id, answer: decision.message || actionCompletion(proposal, pending[0].label, approved), actions: followUpActions, remembered: [], offers: [] };
         }
         const graph = buildGraph({ model: modelOverride || createModel(config), context: () => loadContext(uid(req), thread.id, message), search: (query) => searchOffers(config, query), saver: checkpointer() });
-        const output = await graph.invoke({ message, response: { answer: '', summary: '', promotionIds: [] } }, { configurable: { thread_id: thread.id }, recursionLimit: 8 });
+        const output = await timedAiStage('graph_total', () => graph.invoke({ message, response: { answer: '', summary: '', promotionIds: [] } }, { configurable: { thread_id: thread.id }, recursionLimit: 8 }));
         const remembered: string[] = [];
         await db.transaction(async (tx) => {
           for (const action of output.plan.actions) {

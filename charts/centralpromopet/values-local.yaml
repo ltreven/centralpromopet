@@ -1,4 +1,7 @@
 api:
+  extraEnv:
+    - name: AI_DEBUG
+      value: "true"
   googleClientId: "8433826157-dfk00obfltkj7k9ef364g78fpn3qspv3.apps.googleusercontent.com"
   adminEmails: "ltreven@gmail.com"
   resources:

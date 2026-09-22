@@ -8,10 +8,21 @@ export function actionLabel(action: PetAction, petName: string) {
   if (action.kind === 'subscribe_newsletter') return 'Receber por e-mail dicas de bem-estar e treinamento, novidades e promoções da Central.';
   if (action.kind === 'remember') return `Guardar sobre ${petName}: ${action.memory.content}`;
   if (action.kind === 'delete_pet') return `Excluir ${petName} e suas memórias. O histórico de conversas também será limpo para não reter dados desse pet.`;
-  if (action.kind === 'create_pet') return `Cadastrar ${action.fields.name}: ${action.fields.type === 'dogs' ? 'cão' : 'gato'}${action.fields.breed ? `, raça ${action.fields.breed}` : ''}${action.fields.birthMonth && action.fields.birthYear ? `, nascimento ${String(action.fields.birthMonth).padStart(2, '0')}/${action.fields.birthYear}` : ', sem data de nascimento'}.`;
+  if (action.kind === 'create_pet') {
+    const birth = action.fields.birthMonth && action.fields.birthYear
+      ? `, nascimento${action.estimated ? ' estimado' : ''} em ${String(action.fields.birthMonth).padStart(2, '0')}/${action.fields.birthYear}`
+      : ', sem data de nascimento';
+    return `Cadastrar ${action.fields.name}: ${action.fields.type === 'dogs' ? 'cão' : 'gato'}${action.fields.breed ? `, raça ${action.fields.breed}` : ''}${birth}.`;
+  }
   const labels: Record<string, string> = { name: 'nome', type: 'tipo', breed: 'raça', birthMonth: 'mês de nascimento', birthYear: 'ano de nascimento' };
   const values: Record<string, string> = { dogs: 'cão', cats: 'gato', other: 'outro pet' };
-  return `Atualizar ${petName}: ${Object.entries(action.fields).map(([key, value]) => `${labels[key]} = ${value == null ? 'não informado' : values[String(value)] || value}`).join('; ')}.`;
+  const { birthMonth, birthYear, ...otherFields } = action.fields;
+  const changes = Object.entries(otherFields).map(([key, value]) => `${labels[key]} = ${value == null ? 'não informado' : values[String(value)] || value}`);
+  if (birthMonth && birthYear) {
+    const months = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+    changes.push(`nascimento${action.estimated ? ' estimado' : ''} em ${months[birthMonth - 1]} de ${birthYear}`);
+  }
+  return `Atualizar ${petName}: ${changes.join('; ')}.`;
 }
 export function actionCompletion(action: PetAction, label: string, approved: boolean) {
   if (!approved) return action.kind === 'subscribe_newsletter'

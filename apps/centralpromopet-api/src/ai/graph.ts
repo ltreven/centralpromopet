@@ -5,14 +5,52 @@ import { db, users, pets, aiMemories, aiActions, chatMessages, promotions, chatT
 import { AiConfig, AiError } from './config';
 import { ModelCall } from './provider';
 import { planSchema, actionSchema, answerSchema, parsePlanResponse, PLAN, SYSTEM, explicitQuote, validateBirth } from './contracts';
-import { analyzeTurn } from './routing';
+import type { PetAction } from './contracts';
+
+const aiDebugEnabled = process.env.AI_DEBUG === 'true';
+function logAiTiming(stage: string, startedAt: number, metadata: Record<string, boolean | number | string> = {}) {
+  if (!aiDebugEnabled) return;
+  console.debug('[ai-debug]', JSON.stringify({ stage, duration_ms: Math.round(performance.now() - startedAt), ...metadata }));
+}
+export async function timedAiStage<T>(stage: string, operation: () => Promise<T>, details?: (result: T) => Record<string, boolean | number | string>): Promise<T> {
+  const startedAt = performance.now();
+  let result: T | undefined;
+  let outcome = 'ok';
+  try {
+    result = await operation();
+    return result;
+  } catch (error) {
+    outcome = 'error';
+    throw error;
+  } finally {
+    logAiTiming(stage, startedAt, { outcome, ...(result === undefined ? {} : details?.(result) || {}) });
+  }
+}
 
 export type Offer = Pick<typeof promotions.$inferSelect, 'id' | 'title' | 'store' | 'priceCents' | 'originalPriceCents' | 'currency' | 'coupon' | 'affiliateUrl' | 'endsAt'>;
 export type Context = { userName: string | null; pets: (typeof pets.$inferSelect)[]; memories: (typeof aiMemories.$inferSelect)[]; summary: string; previousSummaries: string[]; recent: { role: string; content: string }[]; newsletterSubscribed: boolean; pendingActions?: { id: string; payload: Record<string, unknown> }[] };
+function newsletterStatusReply(message: string, subscribed: boolean) {
+  const text = message.toLocaleLowerCase('pt-BR').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const asksAboutEmail = /\b(newsletter|e[ -]?mail|dicas? por e?mail)\b/.test(text);
+  const asksStatus = /\b(receb\w*|inscrit\w*|assinad\w*|ativ\w*|opt[ -]?in|verific\w*|cadastro|status)\b/.test(text);
+  const requestsSubscription = /\b(aceito|inscrev\w*|pode ativar|ative|ativar para mim|quero receber|gostaria de receber)\b/.test(text);
+  if (!asksAboutEmail || !asksStatus || requestsSubscription) return null;
+  return subscribed
+    ? 'Sim. O cadastro da sua conta indica que você está inscrito para receber dicas por e-mail. Essa preferência vale para a conta, não individualmente para cada pet.'
+    : 'Não. O cadastro da sua conta indica que o recebimento de dicas por e-mail está desativado. Essa preferência vale para a conta, não individualmente para cada pet.';
+}
+
+function applyEstimatedBirth(fields: { birthMonth?: number | null; birthYear?: number | null }, ageMonths: number) {
+  const today = new Date();
+  const estimate = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth() - ageMonths, 1));
+  fields.birthMonth = estimate.getUTCMonth() + 1;
+  fields.birthYear = estimate.getUTCFullYear();
+}
+
 export const State = Annotation.Root({
   message: Annotation<string>(), context: Annotation<Context>(),
   plan: Annotation<ReturnType<typeof planSchema.parse>>(), offers: Annotation<Offer[]>(),
-  response: Annotation<ReturnType<typeof answerSchema.parse>>(), steering: Annotation<string>(), automaticSearch: Annotation<boolean>(), greetingOnly: Annotation<boolean>(), directReply: Annotation<string>(),
+  response: Annotation<ReturnType<typeof answerSchema.parse>>(), steering: Annotation<string>(), automaticSearch: Annotation<boolean>(), directReply: Annotation<string>(),
 });
 export async function loadContext(userId: string, threadId: string, message = ''): Promise<Context> {
   const [petRows, memoryRows, messages, threads, profiles, previousThreads, pendingActions] = await Promise.all([
@@ -34,7 +72,7 @@ export async function loadContext(userId: string, threadId: string, message = ''
 }
 export async function searchOffers(config: AiConfig, search: { query: string; petType: 'dogs' | 'cats' | 'all' }): Promise<Offer[]> {
   const now = new Date();
-  const words = search.query.split(/\s+/).filter(Boolean).slice(0, 8);
+  const words = [...new Set(search.query.split(/\s+/).map((word) => word.replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, '')).filter(Boolean))].slice(0, 8);
   const matches = words.map((word) => {
     const variants = word.normalize('NFD').replace(/[\u0300-\u036f]/g, '') === 'racao' ? ['ração', 'racao'] : [word];
     return or(...variants.flatMap((variant) => {
@@ -42,33 +80,77 @@ export async function searchOffers(config: AiConfig, search: { query: string; pe
       return [ilike(promotions.title, pattern), ilike(promotions.description, pattern), ilike(promotions.store, pattern)];
     }));
   });
+  // Query terms are alternatives, not mandatory tokens: modifiers like species, age, or size
+  // often do not appear in a product title even when its petTypes metadata is correct.
+  const textMatch = matches.length ? or(...matches) : undefined;
   return db.select({ id: promotions.id, title: promotions.title, store: promotions.store, priceCents: promotions.priceCents,
     originalPriceCents: promotions.originalPriceCents, currency: promotions.currency, coupon: promotions.coupon, affiliateUrl: promotions.affiliateUrl, endsAt: promotions.endsAt,
   }).from(promotions).where(and(eq(promotions.status, 'published'), lte(promotions.startsAt, now), gt(promotions.endsAt, now),
     gte(promotions.createdAt, new Date(now.getTime() - config.promotionsDays * 86400000)),
-    search.petType === 'all' ? undefined : sql`${search.petType} = ANY(${promotions.petTypes})`, ...matches,
+    search.petType === 'all' ? undefined : sql`${search.petType} = ANY(${promotions.petTypes})`, textMatch,
   )).orderBy(desc(promotions.createdAt), desc(promotions.id)).limit(config.promotionsLimit);
 }
 export function buildGraph(deps: { model: ModelCall; context: () => Promise<Context>; search: (search: NonNullable<ReturnType<typeof planSchema.parse>['search']>) => Promise<Offer[]>; saver: BaseCheckpointSaver }) {
   return new StateGraph(State)
-    .addNode('load_context', async () => ({ context: await deps.context(), offers: [], plan: { search: null, actions: [] }, steering: '', automaticSearch: false, greetingOnly: false, directReply: '' }))
+    .addNode('load_context', async () => {
+      const context = await timedAiStage('load_context', deps.context);
+      return { context, offers: [], plan: { search: null, actions: [] }, steering: '', automaticSearch: false, directReply: '' };
+    })
     .addNode('plan_turn', async (state) => {
-      const routing = analyzeTurn(state.message, state.context);
-      if (routing.greetingOnly) return { plan: { search: null, actions: [] }, steering: '', automaticSearch: false, greetingOnly: true, directReply: '' };
-      if (routing.directReply) {
-        const actions = routing.updatePet ? [routing.updatePet] : routing.createPet ? [{ kind: 'create_pet' as const, ...routing.createPet }] : [];
-        return { plan: { search: null, actions }, steering: '', automaticSearch: false, greetingOnly: false, directReply: routing.directReply };
-      }
-      const plan = parsePlanResponse(await deps.model(PLAN, { context: state.context, message: state.message }));
-      if (routing.search) plan.search = routing.search;
+      const profileReply = newsletterStatusReply(state.message, state.context.newsletterSubscribed);
+      if (profileReply) return { plan: { search: null, actions: [] }, steering: '', automaticSearch: false, directReply: profileReply };
+      const modelPlan = await timedAiStage('planner_model', () => deps.model(PLAN, {
+        context: state.context,
+        message: state.message,
+      }));
+      const plan = parsePlanResponse(modelPlan);
       const ids = new Set(state.context.pets.map((pet) => pet.id));
+      // Don't let a repeat registration block useful new details for an existing pet.
+      // Convert only into a proposal for fields that are currently absent.
+      plan.actions = plan.actions.flatMap<PetAction>((action) => {
+        if (action.kind !== 'create_pet') return [action];
+        const existing = state.context.pets.find((pet) => pet.name.toLocaleLowerCase('pt-BR') === action.fields.name.toLocaleLowerCase('pt-BR'));
+        if (!existing || existing.type !== action.fields.type) return [action];
+        const fields: { breed?: string | null; birthMonth?: number | null; birthYear?: number | null } = {};
+        if (action.fields.breed && !existing.breed) fields.breed = action.fields.breed;
+        const missingBirth = existing.birthMonth == null || existing.birthYear == null;
+        if (missingBirth && action.fields.birthMonth != null && action.fields.birthYear != null) {
+          fields.birthMonth = action.fields.birthMonth;
+          fields.birthYear = action.fields.birthYear;
+        }
+        if (Object.keys(fields).length) return [{ kind: 'update_pet' as const, petId: existing.id, fields, sourceQuote: action.sourceQuote }];
+        if (missingBirth && action.estimated && action.ageMonths !== undefined) {
+          return [{ kind: 'update_pet' as const, petId: existing.id, fields: {}, estimated: true, ageMonths: action.ageMonths, sourceQuote: action.sourceQuote }];
+        }
+        return [];
+      });
       plan.actions = plan.actions.filter((action) => {
         if (action.kind === 'subscribe_newsletter' && state.context.newsletterSubscribed) return false;
-        const quote = action.kind === 'remember' ? action.memory.sourceQuote : action.sourceQuote;
+        let quote = action.kind === 'remember' ? action.memory.sourceQuote : action.sourceQuote;
+        if (!explicitQuote(state.message, quote) && (action.kind === 'create_pet' || action.kind === 'update_pet')) {
+          const previousAssistant = [...state.context.recent].reverse().find((entry) => entry.role === 'assistant')?.content || '';
+          const answeredNamePrompt = /\b(nome|como se chama|qual o nome)\b/i.test(previousAssistant) && previousAssistant.includes('?');
+          const askedToConfirmProposal = /\b(proposta|cadastro)\b/i.test(previousAssistant) && previousAssistant.includes('?');
+          const affirmative = /^(sim|pode|claro|ok|okay|isso|pode sim|por favor)[.!\s]*$/i.test(state.message.trim());
+          const petName = action.kind === 'create_pet' ? action.fields.name : state.context.pets.find((pet) => pet.id === action.petId)?.name;
+          const currentMessageHasName = Boolean(petName && state.message.toLocaleLowerCase('pt-BR').includes(petName.toLocaleLowerCase('pt-BR')));
+          if (answeredNamePrompt && currentMessageHasName) {
+            action.sourceQuote = state.message.trim();
+            quote = action.sourceQuote;
+          } else if (askedToConfirmProposal && affirmative) {
+            action.sourceQuote = state.message.trim();
+            quote = action.sourceQuote;
+          }
+        }
         const petId = action.kind === 'remember' ? action.memory.petId : 'petId' in action ? action.petId : null;
         if (!explicitQuote(state.message, quote) || (petId && !ids.has(petId))) return false;
         if (action.kind === 'create_pet') {
           if (state.context.pets.some((pet) => pet.name.toLocaleLowerCase('pt-BR') === action.fields.name.toLocaleLowerCase('pt-BR'))) return false;
+          if (action.ageMonths !== undefined && !action.estimated) return false;
+          if (action.estimated) {
+            if (action.ageMonths === undefined) return false;
+            applyEstimatedBirth(action.fields, action.ageMonths);
+          }
           // Optional birth data must never make a basic registration impossible.
           if ((action.fields.birthMonth == null) !== (action.fields.birthYear == null)) {
             delete action.fields.birthMonth; delete action.fields.birthYear;
@@ -77,6 +159,12 @@ export function buildGraph(deps: { model: ModelCall; context: () => Promise<Cont
         }
         if (action.kind === 'update_pet') {
           const pet = state.context.pets.find((item) => item.id === action.petId)!;
+          if (action.ageMonths !== undefined && !action.estimated) return false;
+          if (action.estimated) {
+            if (action.ageMonths === undefined) return false;
+            applyEstimatedBirth(action.fields, action.ageMonths);
+          }
+          if (Object.entries(action.fields).every(([key, value]) => pet[key as keyof typeof pet] === value)) return false;
           try { validateBirth({ ...pet, ...action.fields }); } catch { return false; }
         }
         return !(state.context.pendingActions || []).some((pending) => {
@@ -93,29 +181,23 @@ export function buildGraph(deps: { model: ModelCall; context: () => Promise<Cont
       const steering = [
         'Responda normalmente em português brasileiro.',
         'Use no máximo 2 frases curtas (cerca de 240 caracteres no total). Não faça listas nem repita a pergunta do usuário. Só dê mais detalhes se ele pedir.',
-        routing.search ? 'O usuário pediu recomendação de produto: consulte as promoções fornecidas e mencione brevemente as opções encontradas. Se não houver resultados, diga isso com clareza; nunca invente produto ou oferta.' : '',
-        routing.askName ? 'Ao final da resposta, faça uma única pergunta curta para saber o nome do pet e poder personalizar ofertas.' : '',
+        plan.search ? 'O usuário pediu recomendação de produto: consulte as promoções fornecidas e mencione brevemente as opções encontradas. Se não houver resultados, diga isso com clareza; nunca invente produto ou oferta.' : '',
       ].filter(Boolean).join(' ');
-      return { plan, steering, automaticSearch: Boolean(routing.search), greetingOnly: false, directReply: '' };
+      return { plan, steering, automaticSearch: Boolean(plan.search), directReply: '' };
     })
-    .addNode('tools', async (state) => ({ offers: state.plan.search ? await deps.search(state.plan.search) : [] }))
+    .addNode('tools', async (state) => {
+      if (!state.plan.search) return { offers: [] };
+      const offers = await timedAiStage('offer_search', () => deps.search(state.plan.search!), (result) => ({ result_count: result.length }));
+      return { offers };
+    })
     .addNode('answer', async (state) => {
-      if (state.greetingOnly) return { response: { answer: 'Oi! Tudo bem por aqui, e você? Tem algum pet em casa?', summary: 'A conversa começou; ainda não foi informado se o usuário tem pet.', promotionIds: [] } };
-      if (state.directReply) return { response: { answer: state.directReply, summary: state.directReply, promotionIds: [] } };
-      const response = answerSchema.parse(await deps.model(`${SYSTEM}\n${state.steering}\nRetorne {answer:string,summary:string,promotionIds:string[]}. Resuma a conversa em até 2000 caracteres preservando incertezas e o status pendente das propostas. Escolha somente IDs das ofertas fornecidas. Estruture answer nesta ordem: resposta à dúvida atual; depois, se pertinente, UMA pergunta opcional OU uma proposta para confirmar, nunca ambos. Não anuncie botões que não existam em plan.actions ou context.pendingActions. Nenhuma ação desta rodada foi executada ainda. Preferências não médicas serão lembradas, sem alterar cadastro.`, state));
+      if (state.directReply) return { response: { answer: state.directReply, summary: state.context.summary, promotionIds: [] } };
+      const modelAnswer = await timedAiStage('answer_model', () => deps.model(`${SYSTEM}\n${state.steering}\nRetorne {answer:string,summary:string,promotionIds:string[]}. Resuma a conversa em até 2000 caracteres preservando incertezas e o status pendente das propostas. Escolha somente IDs das ofertas fornecidas. Estruture answer nesta ordem: resposta à dúvida atual; depois, se pertinente, UMA pergunta opcional OU uma proposta para confirmar, nunca ambos. Se plan.actions contiver uma proposta, diga para confirmar no botão abaixo; não pergunte também “quer que eu confirme?” nem espere um segundo sim por texto. Não anuncie botões que não existam em plan.actions ou context.pendingActions. Nenhuma ação desta rodada foi executada ainda. Preferências não médicas serão lembradas, sem alterar cadastro.`, state));
+      const response = answerSchema.parse(modelAnswer);
       const validIds = new Set(state.offers.map((offer) => offer.id));
       response.promotionIds = [...new Set(response.promotionIds)].filter((id) => validIds.has(id));
       if (state.automaticSearch) {
         response.promotionIds = state.offers.slice(0, 4).map((offer) => offer.id);
-        if (state.offers.length) {
-          const redundantOfferQuestion = /\b(cadastr\w*|salv\w*|guard\w*|traz\w*|mostr\w*)\b.{0,90}\b(oferta|promo\w*|detalh\w*|informa[cç][oõ]es)\b|\b(oferta|promo\w*)\b.{0,90}\b(cadastr\w*|salv\w*|guard\w*|detalh\w*|informa[cç][oõ]es)\b|\b(quer|gostaria)\b.{0,80}\b(detalh\w*|informa[cç][oõ]es)\b/i;
-          const sentences = response.answer.split(/(?<=[.!?])\s+/);
-          const filtered = sentences.filter((sentence) => !redundantOfferQuestion.test(sentence)).join(' ').trim();
-          if (filtered !== response.answer.trim()) {
-            const cards = state.offers.length === 1 ? 'O preço e os detalhes estão no card.' : 'Os preços e detalhes estão nos cards.';
-            response.answer = filtered ? `${filtered} ${cards}` : `Encontrei opções em promoção. ${cards}`;
-          }
-        }
       }
       return { response };
     })
