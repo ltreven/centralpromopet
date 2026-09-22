@@ -3,7 +3,8 @@ import bcrypt from 'bcryptjs';
 import { desc, eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { db, users } from '@centralpromopet/database';
-import { requireAdmin, requireAuth, requireCurrentPassword } from '../auth';
+import { AuthenticatedRequest, requireAdmin, requireAuth, requireCurrentPassword } from '../auth';
+import { logActivity } from '../activity';
 
 export const adminUsersRouter = Router();
 const password = z.string().min(12).refine((value) => Buffer.byteLength(value, 'utf8') <= 72);
@@ -59,6 +60,7 @@ adminUsersRouter.post('/', requireAuth, requireCurrentPassword, requireAdmin, as
       createdAt: users.createdAt,
     });
     if (!created) return res.status(409).json({ success: false, message: 'Já existe um usuário com esse e-mail.' });
+    await logActivity({ userId: (req as AuthenticatedRequest).user.id, event: 'admin.user.create', entityType: 'user', entityId: created.id, details: { role: created.role } });
     res.status(201).json({ success: true, data: created });
   } catch (error) { next(error); }
 });
@@ -74,6 +76,7 @@ adminUsersRouter.patch('/:id', requireAuth, requireCurrentPassword, requireAdmin
       passwordExpired: users.passwordExpired, createdAt: users.createdAt,
     });
     if (!updated) return res.status(404).json({ success: false, message: 'Usuário não encontrado.' });
+    await logActivity({ userId: (req as AuthenticatedRequest).user.id, event: 'admin.user.update', entityType: 'user', entityId: updated.id, details: { role: updated.role, status: updated.status } });
     res.json({ success: true, data: updated });
   } catch (error: unknown) {
     if (error && typeof error === 'object' && 'code' in error && error.code === '23505') return res.status(409).json({ success: false, message: 'Já existe um usuário com esse e-mail.' });

@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { eq, sql } from 'drizzle-orm';
 import { db, users } from '@centralpromopet/database';
 import { AuthenticatedRequest, clearSessionCookie, createSessionToken, requireAuth, requireCurrentPassword, sessionCookie, publicUser } from '../auth';
+import { logActivity } from '../activity';
 
 import { createGoogleRouter } from './google';
 import { GoogleVerifier } from '../google';
@@ -40,6 +41,7 @@ identityRouter.post('/login', async (req, res, next) => {
     const matches = await bcrypt.compare(parsed.data.password, user?.passwordHash || dummyHash);
     if (!user || user.status !== 'active' || !user.passwordHash || !matches) return res.status(401).json({ success: false, message: 'E-mail ou senha inválidos.' });
     await db.update(users).set({ lastLoginAt: new Date() }).where(eq(users.id, user.id));
+    await logActivity({ userId: user.id, event: 'user.login', entityType: 'user', entityId: user.id });
     res.setHeader('Set-Cookie', sessionCookie(createSessionToken(user)));
     res.json({ success: true, data: { user: publicUser(user) } });
   } catch (error) { next(error); }
@@ -55,6 +57,7 @@ identityRouter.patch('/preferences', requireAuth, requireCurrentPassword, async 
   try {
     const userId = (req as AuthenticatedRequest).user.id;
     const [updated] = await db.update(users).set({ receiveNewsletter: parsed.data.receiveNewsletter, updatedAt: new Date() }).where(eq(users.id, userId)).returning();
+    await logActivity({ userId, event: 'user.preferences.update', entityType: 'user', entityId: userId, details: { receiveNewsletter: parsed.data.receiveNewsletter } });
     res.json({ success: true, data: publicUser(updated) });
   } catch (error) { next(error); }
 });
@@ -66,6 +69,7 @@ identityRouter.post('/change-password', requireAuth, async (req, res, next) => {
     const [user] = await db.select().from(users).where(eq(users.id, userId));
     if (!user || !user.passwordHash || !(await bcrypt.compare(parsed.data.oldPassword, user.passwordHash))) return res.status(400).json({ success: false, message: 'Senha atual incorreta.' });
     const [updated] = await db.update(users).set({ passwordHash: await bcrypt.hash(parsed.data.newPassword, 12), passwordExpired: false, sessionVersion: sql`${users.sessionVersion} + 1`, updatedAt: new Date() }).where(eq(users.id, userId)).returning();
+    await logActivity({ userId, event: 'user.password.change', entityType: 'user', entityId: userId });
     res.setHeader('Set-Cookie', sessionCookie(createSessionToken(updated)));
     res.json({ success: true });
   } catch (error) { next(error); }

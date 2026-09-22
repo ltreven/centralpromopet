@@ -118,6 +118,20 @@ export const aiUsage = pgTable('ai_usage', {
   requests: integer('requests').notNull().default(0),
 });
 
+export const activityLogs = pgTable('activity_logs', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }),
+  event: varchar('event', { length: 80 }).notNull(),
+  entityType: varchar('entity_type', { length: 40 }),
+  entityId: uuid('entity_id'),
+  details: jsonb('details').$type<Record<string, unknown>>().notNull().default({}),
+  createdAt: createdAt(),
+}, (table) => ({
+  userIdx: index('activity_logs_user_idx').on(table.userId, table.createdAt),
+  eventIdx: index('activity_logs_event_idx').on(table.event, table.createdAt),
+  createdAtIdx: index('activity_logs_created_at_idx').on(table.createdAt),
+}));
+
 export const promotions = pgTable('promotions', {
   id: uuid('id').defaultRandom().primaryKey(),
   title: varchar('title', { length: 200 }).notNull(),

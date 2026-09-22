@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { db, googleLoginChallenges, users } from '@centralpromopet/database';
 import { AuthenticatedRequest, createSessionToken, publicUser, requireAuth, requireCurrentPassword, sessionCookie } from '../auth';
 import { googleClientId, GoogleVerifier, verifyGoogleCredential } from '../google';
+import { logActivity } from '../activity';
 
 type Purpose = 'login' | 'link';
 const ttlSeconds = 600;
@@ -114,6 +115,13 @@ export function createGoogleRouter(verifier: GoogleVerifier = verifyGoogleCreden
             updatedAt: new Date(),
           }).where(eq(users.id, existing.id)).returning();
           return signedIn;
+        });
+        await logActivity({
+          userId: user.id,
+          event: purpose === 'link' ? 'user.google.link' : 'user.login',
+          entityType: 'user',
+          entityId: user.id,
+          details: { provider: 'google' },
         });
         res.setHeader('Set-Cookie', [sessionCookie(createSessionToken(user)), challengeCookie(purpose, '', true)]);
         res.json({ success: true, data: { user: publicUser(user) } });

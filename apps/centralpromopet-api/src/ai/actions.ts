@@ -16,13 +16,15 @@ export function actionLabel(action: PetAction, petName: string) {
 export async function decideAction(userId: string, id: string, approved: boolean) {
   const [original] = await db.select().from(aiActions).where(and(eq(aiActions.id, id), eq(aiActions.userId, userId)));
   if (!original) throw new AiError('Solicitação não encontrada.', 404);
-  if (original.status !== 'pending') return { status: original.status };
+  if (original.status !== 'pending') return { status: original.status, actionKind: actionSchema.parse(original.payload).kind, changed: false };
   if (Date.now() - original.createdAt.getTime() > 86400000) throw new AiError('Esta confirmação expirou. Faça o pedido novamente.');
   const action = actionSchema.parse(original.payload);
   const status = approved ? 'confirmed' : 'cancelled';
+  let changed = false;
   await db.transaction(async (tx) => {
     const [claimed] = await tx.update(aiActions).set({ status }).where(and(eq(aiActions.id, id), eq(aiActions.userId, userId), eq(aiActions.status, 'pending'))).returning();
     if (!claimed) return;
+    changed = true;
     if (approved) {
       const petId = action.kind === 'remember' ? action.memory.petId : 'petId' in action ? action.petId : null;
       const [pet] = petId ? await tx.select().from(pets).where(and(eq(pets.id, petId), eq(pets.userId, userId))).for('update') : [];
@@ -48,5 +50,5 @@ export async function decideAction(userId: string, id: string, approved: boolean
     await tx.insert(aiAudit).values({ userId, event: `chat.action.${status}`, details: { actionId: id, kind: action.kind } });
   });
   if (approved && action.kind === 'delete_pet') await eraseConversationContext(userId);
-  return { status };
+  return { status, actionKind: action.kind, changed };
 }

@@ -41,7 +41,8 @@ export function SiteHeader() {
             <Link href="/dashboard/pets" onClick={closeAccountMenu}>Meu Pet</Link>
             <Link href="/chat" onClick={closeAccountMenu}>IA da Central</Link>
             {user.role === 'admin' && <>
-              <Link href="/dashboard/admin" onClick={closeAccountMenu}>Produtos e promoções</Link>
+              <Link href="/dashboard/admin" onClick={closeAccountMenu}>Dashboard</Link>
+              <Link href="/dashboard/admin/promotions" onClick={closeAccountMenu}>Produtos e promoções</Link>
               <Link href="/dashboard/admin/users" onClick={closeAccountMenu}>Usuários</Link>
               <Link href="/dashboard/admin/tips" onClick={closeAccountMenu}>Dicas</Link>
               <Link href="/dashboard/admin/ai" onClick={closeAccountMenu}>Configurações da IA</Link>
