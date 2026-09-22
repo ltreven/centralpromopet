@@ -25,6 +25,7 @@ export function ChatScreen({ firstName, initialPrompt = '', initialThread = '' }
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const endOfMessages = useRef<HTMLDivElement>(null);
+  const messageInput = useRef<HTMLTextAreaElement>(null);
   const requestInFlight = useRef(false);
   useEffect(() => {
     const controller = new AbortController();
@@ -45,6 +46,9 @@ export function ChatScreen({ firstName, initialPrompt = '', initialThread = '' }
   useEffect(() => {
     if (messages.length || busy) endOfMessages.current?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth', block: 'end' });
   }, [messages, actions, busy]);
+  useEffect(() => {
+    if (!loading && !busy) requestAnimationFrame(() => messageInput.current?.focus());
+  }, [loading, busy, messages.length]);
   async function reply(value: string) {
     if (requestInFlight.current || !value.trim()) return;
     requestInFlight.current = true; setBusy(true); setError(''); setNotice('');
@@ -98,7 +102,7 @@ export function ChatScreen({ firstName, initialPrompt = '', initialThread = '' }
         <div ref={endOfMessages} />
       </div>}
       {error && <p className="form-error" role="alert">{error}</p>}
-      <form className="chat-screen-form" onSubmit={submit}><textarea rows={2} aria-label="Sua mensagem" placeholder={hasConversation ? 'Continue a conversa…' : 'O que você quer saber sobre seu pet?'} value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(event) => { if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); if (!busy && !loading) void reply(text); } }} maxLength={2000} disabled={busy || loading} /><button type="submit" aria-label="Enviar mensagem" disabled={busy || loading || !text.trim()}><ArrowUp size={21} aria-hidden="true" /></button></form>
+      <form className="chat-screen-form" onSubmit={submit}><textarea ref={messageInput} rows={2} aria-label="Sua mensagem" placeholder={hasConversation ? 'Continue a conversa…' : 'O que você quer saber sobre seu pet?'} value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(event) => { if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); if (!busy && !loading) void reply(text); } }} maxLength={2000} disabled={busy || loading} /><button type="submit" aria-label="Enviar mensagem" disabled={busy || loading || !text.trim()}><ArrowUp size={21} aria-hidden="true" /></button></form>
     </section>
     <footer className="chat-footer"><p className="chat-disclaimer">A IA pode errar. Orientações gerais não substituem um veterinário. Confira preço e disponibilidade na loja.</p><Link href="/dashboard/memory" className="chat-memory-link">O que a IA da Central sabe sobre mim</Link></footer>
   </div>;
