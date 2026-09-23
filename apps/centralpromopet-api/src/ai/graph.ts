@@ -28,7 +28,22 @@ export async function timedAiStage<T>(stage: string, operation: () => Promise<T>
 }
 
 export type Offer = Pick<typeof promotions.$inferSelect, 'id' | 'title' | 'store' | 'priceCents' | 'originalPriceCents' | 'currency' | 'coupon' | 'affiliateUrl' | 'endsAt'>;
-export type Context = { userName: string | null; pets: (typeof pets.$inferSelect)[]; memories: (typeof aiMemories.$inferSelect)[]; summary: string; previousSummaries: string[]; recent: { role: string; content: string }[]; newsletterSubscribed: boolean; pendingActions?: { id: string; payload: Record<string, unknown> }[] };
+type PetContext = typeof pets.$inferSelect & { ageMonthsFromBirthMonth: number | null };
+export type Context = { userName: string | null; currentDate: string; pets: PetContext[]; memories: (typeof aiMemories.$inferSelect)[]; summary: string; previousSummaries: string[]; recent: { role: string; content: string }[]; newsletterSubscribed: boolean; pendingActions?: { id: string; payload: Record<string, unknown> }[] };
+function normalizeEvidence(value: string) {
+  return value.toLocaleLowerCase('pt-BR').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^\p{L}\p{N}\s]/gu, ' ').replace(/\s+/g, ' ').trim();
+}
+function supportedSearchQuery(search: NonNullable<ReturnType<typeof planSchema.parse>['search']>, message: string, recent: Context['recent']) {
+  if (!search.query.trim()) return { ...search, query: '', evidence: '' };
+  const evidence = search.evidence?.trim() || '';
+  const userText = [message, ...recent.filter((item) => item.role === 'user').map((item) => item.content)].map(normalizeEvidence).join(' ');
+  const normalizedEvidence = normalizeEvidence(evidence);
+  const queryWords = normalizeEvidence(search.query).split(' ').filter(Boolean);
+  const evidenceWords = new Set(normalizedEvidence.split(' ').filter(Boolean).map((word) => word.replace(/s$/, '')));
+  const supported = Boolean(normalizedEvidence && userText.includes(normalizedEvidence)
+    && queryWords.some((word) => evidenceWords.has(word.replace(/s$/, ''))));
+  return supported ? search : { ...search, query: '', evidence: '' };
+}
 function newsletterStatusReply(message: string, subscribed: boolean) {
   const text = message.toLocaleLowerCase('pt-BR').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   const asksAboutEmail = /\b(newsletter|e[ -]?mail|dicas? por e?mail)\b/.test(text);
@@ -66,7 +81,14 @@ export async function loadContext(userId: string, threadId: string, message = ''
   const mentioned = petRows.filter((pet) => message.toLowerCase().includes(pet.name.toLowerCase())).map((pet) => pet.id);
   const relevant = memoryRows.filter((m) => !mentioned.length || mentioned.includes(m.petId));
   relevant.sort((a, b) => Number(b.category === 'health') - Number(a.category === 'health'));
-  return { userName: profiles[0]?.displayName || null, pets: petRows, memories: relevant.slice(0, 12), pendingActions, summary: threads[0].summary,
+  const now = new Date();
+  const currentMonthIndex = now.getUTCFullYear() * 12 + now.getUTCMonth();
+  const contextPets: PetContext[] = petRows.map((pet) => ({ ...pet,
+    ageMonthsFromBirthMonth: pet.birthMonth != null && pet.birthYear != null
+      ? Math.max(0, currentMonthIndex - (pet.birthYear * 12 + pet.birthMonth - 1))
+      : null,
+  }));
+  return { userName: profiles[0]?.displayName || null, currentDate: now.toISOString().slice(0, 10), pets: contextPets, memories: relevant.slice(0, 12), pendingActions, summary: threads[0].summary,
     previousSummaries: threads[0].summary ? [] : previousThreads.map((t) => t.summary.slice(0, 1000)),
     recent: messages.reverse().map((m) => ({ ...m, content: m.content.slice(0, 1500) })), newsletterSubscribed: profiles[0]?.subscribed || false };
 }
@@ -104,6 +126,7 @@ export function buildGraph(deps: { model: ModelCall; context: () => Promise<Cont
         message: state.message,
       }));
       const plan = parsePlanResponse(modelPlan);
+      if (plan.search) plan.search = supportedSearchQuery(plan.search, state.message, state.context.recent);
       const ids = new Set(state.context.pets.map((pet) => pet.id));
       // Don't let a repeat registration block useful new details for an existing pet.
       // Convert only into a proposal for fields that are currently absent.

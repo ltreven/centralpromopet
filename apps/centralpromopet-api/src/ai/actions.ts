@@ -17,19 +17,34 @@ export function actionLabel(action: PetAction, petName: string) {
   const labels: Record<string, string> = { name: 'nome', type: 'tipo', breed: 'raça', birthMonth: 'mês de nascimento', birthYear: 'ano de nascimento' };
   const values: Record<string, string> = { dogs: 'cão', cats: 'gato', other: 'outro pet' };
   const { birthMonth, birthYear, ...otherFields } = action.fields;
-  const changes = Object.entries(otherFields).map(([key, value]) => `${labels[key]} = ${value == null ? 'não informado' : values[String(value)] || value}`);
+  const changes = Object.entries(otherFields)
+    .filter(([key, value]) => labels[key] && value != null)
+    .map(([key, value]) => `${labels[key]} = ${values[String(value)] || value}`);
   if (birthMonth && birthYear) {
     const months = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
     changes.push(`nascimento${action.estimated ? ' estimado' : ''} em ${months[birthMonth - 1]} de ${birthYear}`);
   }
-  return `Atualizar ${petName}: ${changes.join('; ')}.`;
+  return changes.length ? `Atualizar ${petName}: ${changes.join('; ')}.` : `Atualizar os dados de ${petName}.`;
 }
-export function actionCompletion(action: PetAction, label: string, approved: boolean) {
+export function actionCompletion(action: PetAction, label: string, approved: boolean, petName?: string) {
   if (!approved) return action.kind === 'subscribe_newsletter'
     ? 'Tudo bem, não vou enviar os e-mails. Se precisar de algo sobre seu pet, é só me chamar.'
     : 'Tudo bem, cancelei essa solicitação.';
   if (action.kind === 'create_pet') return `${action.fields.name} foi cadastrado com sucesso.`;
   if (action.kind === 'subscribe_newsletter') return 'Pronto! Você receberá as dicas por e-mail. Quer ajuda com mais alguma coisa sobre seu pet?';
+  if (action.kind === 'update_pet') {
+    const months = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+    const { birthMonth, birthYear, ...otherFields } = action.fields;
+    const values: Record<string, string> = { dogs: 'cão', cats: 'gato', other: 'outro pet' };
+    const labels: Record<string, string> = { name: 'nome', type: 'tipo', breed: 'raça' };
+    const changes = Object.entries(otherFields).filter(([key, value]) => labels[key] && value != null)
+      .map(([key, value]) => `${labels[key]}: ${values[String(value)] || value}`);
+    if (birthMonth && birthYear) changes.push(`nascimento${action.estimated ? ' estimado' : ''}: ${months[birthMonth - 1]} de ${birthYear}`);
+    const pet = petName ? ` do ${petName}` : '';
+    return changes.length
+      ? `Pronto! Atualizei o cadastro${pet}: ${changes.join('; ')}. Quer ajuda com mais alguma coisa?`
+      : `Pronto! Atualizei o cadastro${pet}. Quer ajuda com mais alguma coisa?`;
+  }
   return `Pronto! ${label} Quer ajuda com mais alguma coisa sobre seu pet?`;
 }
 export async function decideAction(userId: string, id: string, approved: boolean) {
@@ -41,6 +56,7 @@ export async function decideAction(userId: string, id: string, approved: boolean
   const status = approved ? 'confirmed' : 'cancelled';
   let changed = false;
   let askNewsletter = false;
+  let affectedPetName: string | undefined;
   let completionMessage = actionCompletion(action, original.label, approved);
   await db.transaction(async (tx) => {
     const [claimed] = await tx.update(aiActions).set({ status }).where(and(eq(aiActions.id, id), eq(aiActions.userId, userId), eq(aiActions.status, 'pending'))).returning();
@@ -50,6 +66,7 @@ export async function decideAction(userId: string, id: string, approved: boolean
       const petId = action.kind === 'remember' ? action.memory.petId : 'petId' in action ? action.petId : null;
       const [pet] = petId ? await tx.select().from(pets).where(and(eq(pets.id, petId), eq(pets.userId, userId))).for('update') : [];
       if (petId && !pet) throw new AiError('O pet não existe mais no seu cadastro.', 404);
+      affectedPetName = pet?.name;
       if (action.kind === 'subscribe_newsletter') {
         await tx.update(users).set({ receiveNewsletter: true, updatedAt: new Date() }).where(eq(users.id, userId));
       } else if (action.kind === 'create_pet') {
@@ -72,7 +89,7 @@ export async function decideAction(userId: string, id: string, approved: boolean
         await tx.insert(aiMemories).values({ userId, ...action.memory });
       }
     }
-    completionMessage = actionCompletion(action, original.label, approved)
+    completionMessage = actionCompletion(action, original.label, approved, affectedPetName)
       + (approved && action.kind === 'create_pet'
         ? askNewsletter ? ' Você gostaria de receber dicas de bem-estar e treinamento por e-mail?' : ' Como posso ajudar com mais alguma coisa sobre seu pet?'
         : '');
