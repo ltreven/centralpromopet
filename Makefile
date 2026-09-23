@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := help
-.PHONY: help up down dev studio helm-lint staging-status staging-argo install check migrate seed seed-demo bootstrap-admin test-integration
+.PHONY: help up down dev studio helm-lint staging-status staging-argo argocd-ui install check migrate seed seed-demo bootstrap-admin test-integration
 
 up: ## 🚀 Start Tilt
 	@tilt up
@@ -26,6 +26,25 @@ staging-status: ## Show staging workloads and Argo CD status
 
 staging-argo: ## Apply the Central Promo Pet Argo CD application
 	@kubectl --context hetzner-vps apply -f argocd-staging.yaml
+
+argocd-ui: ## Open Argo CD UI and show bootstrap password (ENV=staging)
+	@case "$(ENV)" in \
+		staging) kube_context=hetzner-vps; application=centralpromopet-staging ;; \
+		*) echo "Ambiente inválido: $(ENV). Use ENV=staging."; exit 2 ;; \
+	esac; \
+	command -v kubectl >/dev/null || { echo "kubectl não encontrado."; exit 1; }; \
+	echo "Ambiente: $(ENV) ($$application)"; \
+	echo "Argo CD: https://localhost:8080"; \
+	echo "Usuário: admin"; \
+	encoded_password=$$(kubectl --context "$$kube_context" -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' 2>/dev/null || true); \
+	if [ -n "$$encoded_password" ]; then \
+		echo "Senha inicial (pode não ser a atual):"; \
+		printf '%s' "$$encoded_password" | node -e "let encoded='';process.stdin.on('data', chunk => encoded += chunk);process.stdin.on('end', () => process.stdout.write(Buffer.from(encoded, 'base64').toString()))"; echo; \
+	else \
+		echo "Senha inicial indisponível (secret removida ou inacessível). Se a senha atual foi esquecida, será necessário redefini-la."; \
+	fi; \
+	echo "O port-forward ficará ativo até Ctrl-C."; \
+	kubectl --context "$$kube_context" -n argocd port-forward svc/argocd-server 8080:443
 
 help: ## Show this help
 	@echo "\n  \033[1mCentral Promo Pet Environment Manager\033[0m"
