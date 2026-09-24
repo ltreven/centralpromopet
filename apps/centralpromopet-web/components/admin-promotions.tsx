@@ -2,7 +2,6 @@
 
 import { FormEvent, useEffect, useRef, useState } from 'react';
 
-type PetType = 'dogs' | 'cats' | 'birds' | 'other';
 type Promotion = {
   id: string;
   title: string;
@@ -11,7 +10,6 @@ type Promotion = {
   imageUrl: string | null;
   coupon: string | null;
   storeVerified: boolean;
-  petTypes: PetType[];
   priceCents: number;
   originalPriceCents: number | null;
   affiliateUrl: string;
@@ -19,8 +17,6 @@ type Promotion = {
   endsAt: string;
 };
 
-const petLabels: Record<PetType, string> = { dogs: 'Cães', cats: 'Gatos', birds: 'Pássaros', other: 'Outros' };
-const petChoices: [Exclude<PetType, 'birds'>, string][] = [['dogs', 'Cães'], ['cats', 'Gatos'], ['other', 'Outros']];
 const money = (cents: number, currency = 'BRL') => new Intl.NumberFormat('pt-BR', { style: 'currency', currency }).format(cents / 100);
 function defaultEndDate() {
   const date = new Date();
@@ -91,7 +87,6 @@ export function AdminPromotions() {
     const body = {
       title: form.get('title'), store: form.get('store'), currency: form.get('currency'), coupon: form.get('coupon'), imageUrl: form.get('imageUrl'),
       storeVerified: form.get('storeVerified') === 'on',
-      petTypes: form.getAll('petTypes'),
       originalPrice: form.get('originalPrice'), promotionalPrice: form.get('promotionalPrice'),
       affiliateUrl: form.get('affiliateUrl'),
       endsAt: new Date(`${date}T23:59:59.999-03:00`).toISOString(),
@@ -131,7 +126,7 @@ export function AdminPromotions() {
     {(editing || creating) && <section className="admin-panel" ref={editPanelRef}>
       <span className="eyebrow">{editing ? 'EDITAR OFERTA' : 'NOVA OFERTA'}</span>
       <h2>{editing ? 'Editar produto ou promoção' : 'Cadastrar produto ou promoção'}</h2>
-      <p>Informe os dados do produto e escolha para quais pets ele é indicado.</p>
+      <p>Informe os dados do produto, da oferta e do cupom.</p>
       <form key={editing?.id || 'new-promotion'} className="promotion-form" onSubmit={submit}>
         <label className="field-wide">Nome do produto<input ref={firstFieldRef} name="title" required maxLength={200} defaultValue={editing?.title || 'Coleira Plaquinha Nome Telefone Gato Cachorro Identificação Aço Inox'} /></label>
         <label>Marketplace ou loja<input name="store" required maxLength={100} defaultValue={editing?.store || 'Mercado Livre'} /></label>
@@ -141,13 +136,6 @@ export function AdminPromotions() {
         <label className="field-wide">Link da oferta<input name="affiliateUrl" type="url" required defaultValue={editing?.affiliateUrl || 'https://meli.la/2Je3kJq'} /></label>
         <label>Imagem (URL ou caminho em /promotions/)<input name="imageUrl" maxLength={2048} placeholder="/promotions/nome-do-produto.jpg" defaultValue={editing?.imageUrl || ''} /></label>
         <label>Moeda<select name="currency" defaultValue={editing?.currency || 'BRL'}><option value="BRL">BRL — Real</option></select></label>
-        <fieldset className="pet-options field-wide">
-          <legend>Indicado para</legend>
-          {petChoices.map(([value, label]) => <label className="choice" key={value}>
-            <input type="checkbox" name="petTypes" value={value} defaultChecked={editing ? editing.petTypes.includes(value) : value === 'dogs' || value === 'cats'} />{label}
-          </label>)}
-          {editing?.petTypes.includes('birds') && <input type="hidden" name="petTypes" value="birds" />}
-        </fieldset>
         <label className="choice field-wide"><input type="checkbox" name="storeVerified" defaultChecked={editing?.storeVerified ?? true} />Loja verificada</label>
         <label>Válida até<input name="endsAt" type="date" min={new Date().toLocaleDateString('en-CA')} defaultValue={endDateValue(editing || undefined)} required /></label>
         <label>Status<select name="status" defaultValue={editing?.status || 'draft'}><option value="draft">Rascunho</option><option value="published">Publicada</option></select></label>
@@ -163,7 +151,6 @@ export function AdminPromotions() {
           <div><span className={`status-pill ${offer.status}`}>{offer.status === 'published' ? 'Publicada' : 'Rascunho'}</span>{offer.storeVerified && <span className="status-pill verified">Loja verificada</span>}</div>
           <h3>{offer.title}</h3>
           <p>{offer.store}{offer.coupon ? ` · Cupom ${offer.coupon}` : ''}</p>
-          <div className="pet-tags">{offer.petTypes.map((pet) => <span key={pet}>{petLabels[pet]}</span>)}</div>
           <div className="price">{offer.originalPriceCents && <div className="price-before"><span>❌ De:</span><del>{money(offer.originalPriceCents, offer.currency)}</del></div>}<div className="price-after"><span>✅ Por:</span><strong>{money(offer.priceCents, offer.currency)}</strong></div></div>
           <small>Válida até {new Date(offer.endsAt).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })}</small>
           <div className="admin-offer-actions"><button className="button secondary" type="button" onClick={() => { setEditing(offer); setError(''); setNotice(''); }}>Editar</button><button className="button danger" type="button" disabled={deleting === offer.id} onClick={() => deletePromotion(offer)}>{deleting === offer.id ? 'Excluindo…' : 'Excluir'}</button></div>

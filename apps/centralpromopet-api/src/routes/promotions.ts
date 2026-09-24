@@ -15,8 +15,6 @@ const createPromotionSchema = z.object({
   coupon: z.string().trim().max(100).optional().default(''),
   imageUrl: z.string().trim().max(2048).optional().default('').refine((value) => !value || (value.startsWith('https://') || (value.startsWith('/promotions/') && !value.includes('..'))), 'Use uma imagem HTTPS ou um arquivo em /promotions/.'),
   storeVerified: z.boolean(),
-  petTypes: z.array(z.enum(['dogs', 'cats', 'birds', 'other'])).min(1).max(4)
-    .refine((values) => new Set(values).size === values.length, 'Remova categorias repetidas.'),
   originalPrice: z.union([money, z.literal('')]).optional().default(''),
   promotionalPrice: money,
   affiliateUrl: z.string().url().max(2048).refine((value) => value.startsWith('https://'), 'O link precisa usar HTTPS.'),
@@ -38,7 +36,7 @@ promotionsRouter.get('/today', async (_req, res, next) => {
   try {
     // Only currently valid offers: startsAt inclusive, endsAt exclusive, stored as timestamptz.
     const now = new Date();
-    const data = await db.select().from(promotions).where(and(eq(promotions.status, 'published'), lte(promotions.startsAt, now), gt(promotions.endsAt, now))).orderBy(desc(promotions.startsAt)).limit(100);
+    const data = await db.select().from(promotions).where(and(eq(promotions.status, 'published'), lte(promotions.startsAt, now), gt(promotions.endsAt, now))).orderBy(desc(promotions.startsAt)).limit(1000);
     res.setHeader('Cache-Control', 'no-store');
     res.json({ success: true, data, meta: { timeZone: 'America/Sao_Paulo', asOf: now.toISOString(), currency: 'BRL' } });
   } catch (error) { next(error); }
@@ -64,7 +62,6 @@ promotionsRouter.post('/', requireAuth, requireCurrentPassword, requireAdmin, as
       coupon: value.coupon || null,
       imageUrl: value.imageUrl || null,
       storeVerified: value.storeVerified,
-      petTypes: value.petTypes,
       originalPriceCents: value.originalPrice ? moneyToCents(value.originalPrice) : null,
       priceCents: moneyToCents(value.promotionalPrice),
       affiliateUrl: value.affiliateUrl,
@@ -91,7 +88,6 @@ promotionsRouter.patch('/:id', requireAuth, requireCurrentPassword, requireAdmin
       coupon: value.coupon || null,
       imageUrl: value.imageUrl || null,
       storeVerified: value.storeVerified,
-      petTypes: value.petTypes,
       originalPriceCents: value.originalPrice ? moneyToCents(value.originalPrice) : null,
       priceCents: moneyToCents(value.promotionalPrice),
       affiliateUrl: value.affiliateUrl,

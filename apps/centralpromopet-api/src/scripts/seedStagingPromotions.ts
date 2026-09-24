@@ -12,7 +12,6 @@ async function seedStagingPromotions() {
   for (const offer of demoPromotions) {
     const values = {
       ...offer,
-      petTypes: [...offer.petTypes],
       startsAt: new Date(now - 60000),
       endsAt: new Date(now + 365 * 86400000),
     };

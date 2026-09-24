@@ -26,11 +26,13 @@ test('AI: authorization, durable graph, RAG, confirmation, ownership and erasure
   ]).returning();
   const [pet, otherPet] = await db.insert(pets).values([{ userId: accounts[1].id, name: 'Thor', type: 'dogs' }, { userId: accounts[2].id, name: 'Luna', type: 'cats' }]).returning();
   const now = Date.now();
+  const clothingTitle = `Roupa Protetora ${randomUUID()}`;
   const offers = await db.insert(promotions).values([
-    { title: `Brinquedo ${suffix}`, store: 'Test', petTypes: ['dogs'], priceCents: 1000, affiliateUrl: 'https://example.com/offer', startsAt: new Date(now - 86400000), endsAt: new Date(now + 86400000), status: 'published' },
-    { title: `Brinquedo ${suffix}`, store: 'Test', petTypes: ['dogs'], priceCents: 1000, affiliateUrl: 'https://example.com/expired', startsAt: new Date(now - 86400000), endsAt: new Date(now - 1000), status: 'published' },
-    { title: `Brinquedo ${suffix}`, store: 'Test', petTypes: ['dogs'], priceCents: 1000, affiliateUrl: 'https://example.com/old', startsAt: new Date(now - 86400000), endsAt: new Date(now + 86400000), createdAt: new Date(now - 70 * 86400000), status: 'published' },
-    { title: `Brinquedo ${suffix}`, store: 'Test', petTypes: ['dogs'], priceCents: 1000, affiliateUrl: 'https://example.com/draft', startsAt: new Date(now - 86400000), endsAt: new Date(now + 86400000), status: 'draft' },
+    { title: `Brinquedo ${suffix}`, store: 'Test', priceCents: 1000, affiliateUrl: 'https://example.com/offer', startsAt: new Date(now - 86400000), endsAt: new Date(now + 86400000), status: 'published' },
+    { title: clothingTitle, store: 'Test', priceCents: 1000, affiliateUrl: 'https://example.com/clothing', startsAt: new Date(now - 86400000), endsAt: new Date(now + 86400000), status: 'published' },
+    { title: `Brinquedo ${suffix}`, store: 'Test', priceCents: 1000, affiliateUrl: 'https://example.com/expired', startsAt: new Date(now - 86400000), endsAt: new Date(now - 1000), status: 'published' },
+    { title: `Brinquedo ${suffix}`, store: 'Test', priceCents: 1000, affiliateUrl: 'https://example.com/old', startsAt: new Date(now - 86400000), endsAt: new Date(now + 86400000), createdAt: new Date(now - 70 * 86400000), status: 'published' },
+    { title: `Brinquedo ${suffix}`, store: 'Test', priceCents: 1000, affiliateUrl: 'https://example.com/draft', startsAt: new Date(now - 86400000), endsAt: new Date(now + 86400000), status: 'draft' },
   ]).returning();
   const [previousSettings] = await db.select().from(aiSettings).where(eq(aiSettings.id, 1));
   const config = settingsSchema.parse({ enabled: true, dailyMessageLimit: 40 });
@@ -38,7 +40,7 @@ test('AI: authorization, durable graph, RAG, confirmation, ownership and erasure
   const app = createApp({ aiModel: async (instructions, input) => {
     const state = input as { message: string; context: typeof observedContext; offers?: { id: string }[] };
     observedContext = state.context;
-    if (instructions.includes('Planeje ferramentas')) {
+    if (instructions.includes('Interprete a mensagem atual')) {
       const actions = state.message === 'mude Thor para gato' ? [{ kind: 'update_pet', petId: pet.id, fields: { type: 'cats' }, sourceQuote: state.message }]
         : state.message === 'exclua Thor' ? [{ kind: 'delete_pet', petId: pet.id, sourceQuote: state.message }]
         : state.message === 'sim, quero novidades' ? [{ kind: 'subscribe_newsletter', sourceQuote: state.message }]
@@ -47,7 +49,7 @@ test('AI: authorization, durable graph, RAG, confirmation, ownership and erasure
         : state.message === 'invadir' ? [{ kind: 'delete_pet', petId: otherPet.id, sourceQuote: state.message }]
         : state.message === 'cadastrar Max cachorro' ? [{ kind: 'create_pet', fields: { name: 'Max', type: 'dogs' }, sourceQuote: state.message }]
         : [];
-      return { search: state.message.startsWith('ofertas') ? { query: suffix, petType: 'dogs' } : null, actions };
+      return { search: state.message.startsWith('ofertas') ? { query: suffix } : null, actions };
     }
     return { answer: 'Resposta de teste útil para seu pet.', summary: 'Resumo persistente de teste.', promotionIds: [...(state.offers || []).map((o) => o.id), randomUUID()] };
   } });
@@ -74,7 +76,7 @@ test('AI: authorization, durable graph, RAG, confirmation, ownership and erasure
       const result = await request('chat/messages', 'POST', { message: 'ofertas para cães' });
       assert.equal(result.status, 200, JSON.stringify(result.body));
       thread = result.body.data.threadId;
-      assert.deepEqual(result.body.data.offers.map((o: { id: string }) => o.id), [offers[0].id]);
+      assert.deepEqual(result.body.data.offers.map((o: { id: string }) => o.id).sort(), [offers[0].id, offers[1].id].sort());
       assert.deepEqual(observedContext?.pets.map((p) => p.id), [pet.id]);
       const [checkpoint] = await client`select count(*)::int as count from ai_checkpoints.checkpoints where thread_id = ${thread}`;
       assert.ok(checkpoint.count > 0);
@@ -82,9 +84,11 @@ test('AI: authorization, durable graph, RAG, confirmation, ownership and erasure
       const next = await request('chat/messages', 'POST', { threadId: thread, message: 'continue' });
       assert.equal(next.status, 200, JSON.stringify(next.body));
       assert.equal(observedContext?.recent.length, 2); assert.match(observedContext?.summary || '', /persistente/);
-      const wide = await searchOffers({ ...config, promotionsDays: 90 }, { query: suffix, petType: 'dogs' });
+      const wide = await searchOffers({ ...config, promotionsDays: 90 }, { query: suffix });
       assert.equal(wide.length, 2);
-      assert.equal((await searchOffers(config, { query: suffix, petType: 'cats' })).length, 0);
+      assert.equal((await searchOffers(config, { query: suffix })).length, 1);
+      const clothing = await searchOffers(config, { query: 'roupinhas pra cachorro' });
+      assert.ok(clothing.some((offer) => offer.title === clothingTitle));
     });
     await t.test('another user cannot read, mutate or erase the conversation', async () => {
       assert.equal((await request(`chat/threads/${thread}`, 'GET', undefined, 2)).status, 404);
