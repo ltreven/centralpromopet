@@ -85,8 +85,6 @@ h2 { font-size: 32px; line-height: 1.2; letter-spacing: -1px; margin-block: 10px
 .promotion-form input:not([type=checkbox]), .promotion-form select { min-height: 44px; border: 1px solid #cbd5ce; border-radius: 8px; padding: 10px 12px; background: white; width: 100%; }
 .promotion-form input[type=checkbox] { width: 18px; height: 18px; accent-color: var(--green); }
 .field-wide { grid-column: 1 / -1; }
-.pet-options { display: flex; flex-wrap: wrap; gap: 18px; border: 1px solid var(--line); border-radius: 10px; padding: 14px; }
-.pet-options legend { font-size: 13px; font-weight: 700; padding-inline: 6px; }
 .promotion-form .choice { display: inline-flex; flex-direction: row; align-items: center; gap: 8px; font-size: 13px; font-weight: 550; }
 .form-actions, .admin-offer-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
 .button.danger { border-color: #e8c9c5; background: #fff4f2; color: #9b2525; }
@@ -109,7 +107,7 @@ h2 { font-size: 32px; line-height: 1.2; letter-spacing: -1px; margin-block: 10px
 }
 .toast { position: fixed; top: 22px; right: 22px; z-index: 60; max-width: min(420px, calc(100% - 44px)); padding: 14px 18px; border: 1px solid #b9d9be; border-radius: 11px; background: #eff9ef; color: var(--green-dark); box-shadow: 0 12px 34px #182b2320; font-size: 14px; font-weight: 700; animation: toast-in .2s ease-out; }
 @keyframes toast-in { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
-.status-pill, .pet-tags span { display: inline-flex; align-items: center; border-radius: 99px; padding: 5px 10px; background: #eef3e8; color: var(--green); font-size: 11px; font-weight: 700; margin-right: 7px; }
+.status-pill { display: inline-flex; align-items: center; border-radius: 99px; padding: 5px 10px; background: #eef3e8; color: var(--green); font-size: 11px; font-weight: 700; margin-right: 7px; }
 .status-pill.draft { background: #fff3df; color: #875400; }
 .status-pill.verified { background: #e8f4ed; }
 .offer-coupon { border: 1px dashed #cbd7ca; padding: 10px 12px; border-radius: 8px; color: var(--green); }
@@ -198,9 +196,6 @@ h2 { font-size: 32px; line-height: 1.2; letter-spacing: -1px; margin-block: 10px
 .home-search .home-search-close:hover { background: #f1f4ec; color: var(--ink); }
 .home-search-toggle { display: grid; place-items: center; flex: 0 0 46px; width: 46px; height: 46px; border: 1px solid #d8dfd5; border-radius: 12px; background: #fff; color: var(--green); }
 .home-search-toggle:hover { border-color: #aabdaf; background: #f8faf6; }
-.pet-filter { display: flex; flex-wrap: wrap; justify-content: center; gap: 9px; margin: 18px 0 22px; }
-.pet-filter-button { display: inline-flex; align-items: center; gap: 7px; min-height: 38px; padding: 7px 14px; border: 1px solid #d8dfd5; border-radius: 999px; background: #fff; color: var(--ink); font-size: 13px; font-weight: 650; }
-.pet-filter-button.active { color: white; background: var(--green); border-color: var(--green); }
 .whatsapp-button { min-height: 48px; padding: 12px 20px; }
 .hero-scroll { display: inline-flex; align-items: center; gap: 7px; margin-top: 21px; color: var(--muted); font-size: 12px; font-weight: 600; }
 .offers-heading { align-items: center; margin-bottom: 22px; }
@@ -208,14 +203,12 @@ h2 { font-size: 32px; line-height: 1.2; letter-spacing: -1px; margin-block: 10px
 .offers-heading .text-link { padding: 8px 0; background: none; border: 0; }
 .offer-controls { display: flex; align-items: center; gap: 15px; margin-bottom: 22px; }
 .offer-controls .home-search { flex: 0 1 350px; min-width: 220px; }
-.offer-controls .pet-filter { flex: 0 0 auto; gap: 8px; margin: 0; }
 .offers-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
 .offer-card { padding: 14px; gap: 11px; }
 .offer-card h3 { min-height: 48px; font-size: 17px; line-height: 1.45; }
 .offer-card .product-image { aspect-ratio: 1.2 / 1; background: #f4f6f0; }
 .offer-storeline { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--muted); font-size: 11px; font-weight: 700; }
 .verified-store { color: var(--green); font-size: 10px; font-weight: 650; }
-.offer-card .pet-tags { min-height: 25px; }
 .offer-card .price { display: flex; flex-direction: column; align-items: flex-start; gap: 5px; }
 .price-before, .price-after { display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px; }
 .price-before { color: var(--muted); font-size: 14px; }
@@ -306,15 +299,11 @@ h2 { font-size: 32px; line-height: 1.2; letter-spacing: -1px; margin-block: 10px
   .search-hero-content > p { font-size: 14px; }
   .search-hero-actions .button { font-size: 13px; padding-inline: 12px; }
   .hero-tip { padding: 14px; margin-top: 20px; }
-  .pet-filter { gap: 7px; }
-  .pet-filter-button { padding-inline: 11px; font-size: 12px; }
   .offers-heading h2 { font-size: 22px; }
   .offer-controls { flex-direction: row; align-items: center; justify-content: center; flex-wrap: nowrap; gap: 7px; }
   .offer-controls:has(.home-search) { flex-wrap: wrap; }
   .offer-controls .home-search { width: 100%; min-width: 0; flex: 0 0 100%; }
   .offer-controls .home-search-toggle { flex: 0 0 40px; width: 40px; height: 40px; }
-  .offer-controls .pet-filter { width: auto; flex: 0 1 auto; flex-wrap: nowrap; justify-content: center; gap: 5px; }
-  .offer-controls .pet-filter-button { min-height: 36px; gap: 4px; padding: 6px 7px; font-size: 11px; }
   .offers-grid { grid-template-columns: minmax(0, 1fr); gap: 16px; }
   .offer-card { padding: 16px; gap: 12px; }
   .offer-card h3 { min-height: 0; font-size: 17px; }

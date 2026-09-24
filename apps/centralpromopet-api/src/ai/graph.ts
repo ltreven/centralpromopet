@@ -1,6 +1,6 @@
 import { Annotation, StateGraph, START, END } from '@langchain/langgraph';
 import type { BaseCheckpointSaver } from '@langchain/langgraph-checkpoint';
-import { and, desc, eq, ne, gte, lte, gt, ilike, or, sql } from 'drizzle-orm';
+import { and, desc, eq, ne, gte, lte, gt, ilike, or } from 'drizzle-orm';
 import { db, users, pets, aiMemories, aiActions, chatMessages, promotions, chatThreads } from '@centralpromopet/database';
 import { AiConfig, AiError } from './config';
 import { ModelCall } from './provider';
@@ -92,24 +92,34 @@ export async function loadContext(userId: string, threadId: string, message = ''
     previousSummaries: threads[0].summary ? [] : previousThreads.map((t) => t.summary.slice(0, 1000)),
     recent: messages.reverse().map((m) => ({ ...m, content: m.content.slice(0, 1500) })), newsletterSubscribed: profiles[0]?.subscribed || false };
 }
-export async function searchOffers(config: AiConfig, search: { query: string; petType: 'dogs' | 'cats' | 'all' }): Promise<Offer[]> {
+export async function searchOffers(config: AiConfig, search: { query: string }): Promise<Offer[]> {
   const now = new Date();
-  const words = [...new Set(search.query.split(/\s+/).map((word) => word.replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, '')).filter(Boolean))].slice(0, 8);
+  const ignoredWords = new Set(['a', 'as', 'o', 'os', 'de', 'da', 'do', 'das', 'dos', 'para', 'pra', 'por', 'com', 'em', 'no', 'na']);
+  const synonyms: Record<string, string[]> = {
+    roupinha: ['roupa'], roupinhas: ['roupa'], roupas: ['roupa'],
+    cachorros: ['cachorro'], cães: ['cao', 'cachorro'], caes: ['cão', 'cachorro'], cão: ['cao', 'cachorro'],
+    gatos: ['gato'], gatinhos: ['gato'], gatinho: ['gato'],
+  };
+  const words = [...new Set(search.query.split(/\s+/)
+    .map((word) => word.replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, ''))
+    .filter((word) => Boolean(word) && !ignoredWords.has(word.toLocaleLowerCase('pt-BR')))
+    .slice(0, 8))];
   const matches = words.map((word) => {
-    const variants = word.normalize('NFD').replace(/[\u0300-\u036f]/g, '') === 'racao' ? ['ração', 'racao'] : [word];
+    const normalized = word.toLocaleLowerCase('pt-BR');
+    const variants = [...new Set([word, ...(synonyms[normalized] || []), ...(normalized.normalize('NFD').replace(/[\u0300-\u036f]/g, '') === 'racao' ? ['ração', 'racao'] : [])])];
     return or(...variants.flatMap((variant) => {
       const pattern = `%${variant.replace(/[\\%_]/g, '\\$&')}%`;
-      return [ilike(promotions.title, pattern), ilike(promotions.description, pattern), ilike(promotions.store, pattern)];
+      return [ilike(promotions.title, pattern), ilike(promotions.description, pattern), ilike(promotions.store, pattern), ilike(promotions.coupon, pattern)];
     }));
   });
   // Query terms are alternatives, not mandatory tokens: modifiers like species, age, or size
-  // often do not appear in a product title even when its petTypes metadata is correct.
+  // often do not appear in a product title.
   const textMatch = matches.length ? or(...matches) : undefined;
   return db.select({ id: promotions.id, title: promotions.title, store: promotions.store, priceCents: promotions.priceCents,
     originalPriceCents: promotions.originalPriceCents, currency: promotions.currency, coupon: promotions.coupon, affiliateUrl: promotions.affiliateUrl, endsAt: promotions.endsAt,
   }).from(promotions).where(and(eq(promotions.status, 'published'), lte(promotions.startsAt, now), gt(promotions.endsAt, now),
     gte(promotions.createdAt, new Date(now.getTime() - config.promotionsDays * 86400000)),
-    search.petType === 'all' ? undefined : sql`${search.petType} = ANY(${promotions.petTypes})`, textMatch,
+    textMatch,
   )).orderBy(desc(promotions.createdAt), desc(promotions.id)).limit(config.promotionsLimit);
 }
 export function buildGraph(deps: { model: ModelCall; context: () => Promise<Context>; search: (search: NonNullable<ReturnType<typeof planSchema.parse>['search']>) => Promise<Offer[]>; saver: BaseCheckpointSaver }) {

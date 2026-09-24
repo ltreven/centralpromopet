@@ -122,14 +122,13 @@ test('real database: first login, authorization, revocation and active promotion
       await db.update(users).set({ status: 'inactive' }).where(eq(users.id, inserted[1].id));
       assert.equal((await request('/api/identity/me', undefined, clientCookie)).status, 401);
     });
-    await t.test('admins can register and list pet-specific promotions', async () => {
+    await t.test('admins can register and list promotions without pet classification', async () => {
       const valid = {
         title: 'Coleira Plaquinha Nome Telefone Gato Cachorro Identificação Aço Inox',
         store: 'Mercado Livre', currency: 'BRL', coupon: 'BATEUPRONTOCUPOM', storeVerified: true,
-        petTypes: ['dogs', 'cats'], originalPrice: '38.90', promotionalPrice: '27.22',
+        originalPrice: '38.90', promotionalPrice: '27.22',
         affiliateUrl: 'https://meli.la/2Je3kJq', endsAt: new Date(Date.now() + 86400000).toISOString(), status: 'published',
       };
-      assert.equal((await request('/api/promotions', { ...valid, petTypes: [] })).status, 400);
       const response = await request('/api/promotions', valid);
       assert.equal(response.status, 201);
       const body = await response.json();
@@ -137,7 +136,7 @@ test('real database: first login, authorization, revocation and active promotion
       assert.equal(body.data.priceCents, 2722);
       assert.equal(body.data.originalPriceCents, 3890);
       assert.equal(body.data.currency, 'BRL');
-      assert.deepEqual(body.data.petTypes, ['dogs', 'cats']);
+      assert.equal('petTypes' in body.data, false);
       assert.equal(body.data.coupon, 'BATEUPRONTOCUPOM');
       assert.equal(body.data.storeVerified, true);
       const listed = await request('/api/promotions/admin');
@@ -145,7 +144,7 @@ test('real database: first login, authorization, revocation and active promotion
       assert.ok((await listed.json()).data.some((offer: { id: string }) => offer.id === body.data.id));
 
       const noReferencePrice = await request('/api/promotions', {
-        ...valid, title: 'Oferta sem preço original', originalPrice: '', coupon: '', petTypes: ['cats'], status: 'draft',
+        ...valid, title: 'Oferta sem preço original', originalPrice: '', coupon: '', status: 'draft',
       });
       assert.equal(noReferencePrice.status, 201);
       const draft = await noReferencePrice.json();
