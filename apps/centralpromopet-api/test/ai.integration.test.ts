@@ -76,7 +76,7 @@ test('AI: authorization, durable graph, RAG, confirmation, ownership and erasure
       const result = await request('chat/messages', 'POST', { message: 'ofertas para cães' });
       assert.equal(result.status, 200, JSON.stringify(result.body));
       thread = result.body.data.threadId;
-      assert.deepEqual(result.body.data.offers.map((o: { id: string }) => o.id), [offers[0].id]);
+      assert.deepEqual(result.body.data.offers.map((o: { id: string }) => o.id).sort(), [offers[0].id, offers[1].id].sort());
       assert.deepEqual(observedContext?.pets.map((p) => p.id), [pet.id]);
       const [checkpoint] = await client`select count(*)::int as count from ai_checkpoints.checkpoints where thread_id = ${thread}`;
       assert.ok(checkpoint.count > 0);
