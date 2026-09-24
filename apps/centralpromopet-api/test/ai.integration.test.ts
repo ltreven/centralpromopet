@@ -40,7 +40,7 @@ test('AI: authorization, durable graph, RAG, confirmation, ownership and erasure
   const app = createApp({ aiModel: async (instructions, input) => {
     const state = input as { message: string; context: typeof observedContext; offers?: { id: string }[] };
     observedContext = state.context;
-    if (instructions.includes('Planeje ferramentas')) {
+    if (instructions.includes('Interprete a mensagem atual')) {
       const actions = state.message === 'mude Thor para gato' ? [{ kind: 'update_pet', petId: pet.id, fields: { type: 'cats' }, sourceQuote: state.message }]
         : state.message === 'exclua Thor' ? [{ kind: 'delete_pet', petId: pet.id, sourceQuote: state.message }]
         : state.message === 'sim, quero novidades' ? [{ kind: 'subscribe_newsletter', sourceQuote: state.message }]
