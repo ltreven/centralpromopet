@@ -1,7 +1,7 @@
 import { Router, Request } from 'express';
 import { and, asc, eq } from 'drizzle-orm';
 import { z } from 'zod';
-import { db, pets, users } from '@centralpromopet/database';
+import { db, pets } from '@centralpromopet/database';
 import { AuthenticatedRequest, requireAuth, requireCurrentPassword } from '../auth';
 import { logActivity } from '../activity';
 
@@ -14,7 +14,6 @@ const petSchema = z.object({
   breed: z.preprocess((value) => value === '' ? null : value, z.string().trim().max(100, 'A raça deve ter no máximo 100 caracteres.').nullable().optional()),
   birthMonth: z.number().int().min(1).max(12).nullable().optional(),
   birthYear: z.number().int().min(1900).max(new Date().getFullYear()).nullable().optional(),
-  receiveUpdates: z.boolean().default(false),
 }).superRefine((value, context) => {
   if ((value.birthMonth == null) !== (value.birthYear == null)) context.addIssue({ code: z.ZodIssueCode.custom, path: ['birthMonth'], message: 'Informe mês e ano de nascimento juntos, ou deixe os dois em branco.' });
 });
@@ -34,7 +33,6 @@ petsRouter.post('/', async (req, res, next) => {
   if (!parsed.success) return res.status(400).json({ success: false, message: parsed.error.issues[0]?.message || 'Confira os dados do pet.' });
   try {
     const [data] = await db.insert(pets).values({ ...parsed.data, userId: currentUserId(req) }).returning();
-    if (parsed.data.receiveUpdates) await db.update(users).set({ receiveNewsletter: true, updatedAt: new Date() }).where(eq(users.id, currentUserId(req)));
     await logActivity({ userId: currentUserId(req), event: 'pet.create', entityType: 'pet', entityId: data.id, details: { type: data.type } });
     res.status(201).json({ success: true, data });
   } catch (error) { next(error); }
@@ -48,7 +46,6 @@ petsRouter.patch('/:id', async (req, res, next) => {
   try {
     const [data] = await db.update(pets).set({ ...parsed.data, updatedAt: new Date() }).where(and(eq(pets.id, id.data), eq(pets.userId, currentUserId(req)))).returning();
     if (!data) return res.status(404).json({ success: false, message: 'Pet não encontrado.' });
-    if (parsed.data.receiveUpdates) await db.update(users).set({ receiveNewsletter: true, updatedAt: new Date() }).where(eq(users.id, currentUserId(req)));
     await logActivity({ userId: currentUserId(req), event: 'pet.update', entityType: 'pet', entityId: data.id, details: { type: data.type } });
     res.json({ success: true, data });
   } catch (error) { next(error); }

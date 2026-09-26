@@ -347,13 +347,22 @@ h2 { font-size: 32px; line-height: 1.2; letter-spacing: -1px; margin-block: 10px
 .google-link h2 { font-size: 21px; margin-bottom: 12px; }
 .pets-page { padding-block: 45px 70px; }
 .daily-tips-flow, .daily-tips-confirmation { padding: clamp(28px, 6vw, 52px); }
+.daily-tips-kicker { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
+.daily-tips-kicker .eyebrow { font-size: 13px; line-height: 1.2; letter-spacing: 1.25px; }
+.daily-tips-kicker .daily-tips-success-icon { width: 26px; height: 26px; }
+.daily-tips-action-divider { margin-top: 24px; padding-top: 22px; border-top: 1px solid var(--line); }
 .daily-tips-flow h1, .daily-tips-confirmation h1 { font-size: clamp(30px, 5vw, 42px); letter-spacing: -1.2px; margin: 10px 0 14px; }
 .daily-tips-flow > p, .daily-tips-confirmation p { max-width: 620px; color: var(--muted); font-size: 16px; line-height: 1.65; }
 .daily-tips-confirmation { display: flex; align-items: flex-start; gap: 20px; border-color: #cfe4ca; background: #f5fbf2; }
 .daily-tips-confirmation > svg, .daily-tips-success-icon { color: var(--green); flex: 0 0 auto; }
 .daily-tips-confirmation .button { margin-top: 10px; }
-.daily-tips-choices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-top: 28px; }
-.daily-tips-choice { display: flex; align-items: center; justify-content: center; gap: 12px; min-height: 96px; border: 1px solid #cfe4ca; border-radius: 14px; background: #f5fbf2; color: var(--ink); font: inherit; font-size: 17px; font-weight: 750; cursor: pointer; }
+.newsletter-optout { display: flex; align-items: flex-start; gap: 10px; max-width: 620px; margin-top: 24px; color: var(--ink); line-height: 1.5; }
+.newsletter-optout input { width: 18px; height: 18px; flex: 0 0 18px; margin: 2px 0 0; accent-color: var(--green); }
+.pet-encouragement { margin-top: 22px; color: var(--muted); font-size: 14px; line-height: 1.6; }
+.newsletter-preference { margin-top: 26px; padding: 22px 24px; border: 1px solid var(--line); border-radius: 14px; background: #fff; }
+.newsletter-preference .newsletter-optout { margin-top: 8px; }
+.daily-tips-choices { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 22px; }
+.daily-tips-choice { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding: 10px 18px; border: 1px solid #cfe4ca; border-radius: 12px; background: #f5fbf2; color: var(--ink); font: inherit; font-size: 15px; font-weight: 700; cursor: pointer; }
 .daily-tips-choice:hover { border-color: var(--green); background: #edf7e9; }
 .daily-tips-form { display: grid; gap: 18px; max-width: 480px; margin-top: 28px; }
 .daily-tips-form label { display: grid; gap: 8px; color: var(--ink); font-size: 13px; font-weight: 700; }
@@ -398,7 +407,6 @@ h2 { font-size: 32px; line-height: 1.2; letter-spacing: -1px; margin-block: 10px
   .pet-invite .button { width: 100%; }
   .pets-page { padding-block: 30px 45px; }
   .daily-tips-confirmation { flex-direction: column; }
-  .daily-tips-choices { grid-template-columns: 1fr; }
   .pets-layout { grid-template-columns: 1fr; }
   .pets-page-heading { align-items: flex-start; }
   .pets-page-heading > svg { width: 32px; }
