@@ -80,8 +80,8 @@ export function HomeLanding({ initialQuery, shouldScrollToOffers }: { initialQue
         <a href={site.whatsappUrl} target="_blank" rel="noopener noreferrer" className="button light">Entrar no Grupo VIP <ArrowUpRight size={17} /></a>
       </section>
       <section className="pet-invite container">
-        <div><span className="eyebrow">DO JEITINHO DELE</span><h2>Quer receber novidades para o seu pet?</h2><p>Cadastre seu companheiro e receba dicas de bem estar e treinamento no seu e-mail.</p></div>
-        <Link href={user ? (user.passwordExpired ? '/change-password?next=%2Fdashboard%2Fpets' : '/dashboard/pets') : '/login?next=%2Fdashboard%2Fpets'} className="button primary">Cadastrar meu pet <ArrowUpRight size={17} /></Link>
+        <div><span className="eyebrow">UM MIMO PARA VOCÊ E SEU PET</span><h2>Dicas que fazem bem. Ofertas que valem a pena.</h2><p>Receba no seu e-mail dicas de bem-estar e treinamento, além de promoções imperdíveis.</p></div>
+        <Link href={user ? (user.passwordExpired ? '/change-password?next=%2Fdashboard%2Fpets%3FdailyTips%3D1' : '/dashboard/pets?dailyTips=1') : '/login?next=%2Fdashboard%2Fpets%3FdailyTips%3D1'} className="button primary">Quero receber as novidades <ArrowUpRight size={17} /></Link>
       </section>
     </main>
     <footer className="container site-footer"><Brand /><span>Carinho pelo seu pet. Cuidado com seu bolso.</span><span>© {new Date().getFullYear()} Central Promo Pet</span></footer>
